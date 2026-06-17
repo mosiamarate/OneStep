@@ -60,6 +60,7 @@ Instead of overwhelming users with long task lists, streak pressure, or aggressi
 ---
 
 Project Structure
+```txt
 onestep/
 ├── public/
 │
@@ -143,7 +144,7 @@ onestep/
 ├── postcss.config.mjs
 ├── README.md
 └── tsconfig.json
-
+```
 Notes
 src/app/page.tsx is the landing page.
 src/app/auth/login/page.tsx is the login page.
