@@ -1,0 +1,11 @@
+#main-body{
+    background-color: rgb(24, 24, 39);
+    color: azure;
+}
+
+button
+.get-started{
+    border-radius: 2px;
+    border: 10px;
+    justify-items: center;
+}
