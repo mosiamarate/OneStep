@@ -8,6 +8,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { logoutUser } from "../../lib/auth";
 import { useUserProfile } from "../../hooks/useUserProfile";
 import Footer from "../../components/layout/Footer";
+import InstallAppButton from "../../components/pwa/InstallAppButton";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -157,7 +158,7 @@ export default function DashboardPage() {
                 text="Showing up counts, even when energy is low."
               />
             </div>
-
+            <InstallAppButton />
             <div className="mt-6 sm:hidden">
               <button
                 onClick={handleLogout}

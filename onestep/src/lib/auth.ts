@@ -12,8 +12,10 @@ import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 
 import { auth, db, googleProvider } from "../lib/firebase";
 
-
-
+import {
+  verifyPasswordResetCode,
+  confirmPasswordReset,
+} from "firebase/auth";
 
 export async function loginUser(email: string, password: string) {
   return signInWithEmailAndPassword(auth, email, password);
@@ -38,7 +40,6 @@ export async function signupUser(
     uid: userCredential.user.uid,
     fullName,
     email,
-    photoURL: "",
     provider: "password",
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -57,7 +58,6 @@ export async function loginWithGoogle() {
       uid: result.user.uid,
       fullName: result.user.displayName || "",
       email: result.user.email || "",
-      photoURL: result.user.photoURL || "",
       provider: "google",
       isNewUser: extraInfo?.isNewUser || false,
       updatedAt: serverTimestamp(),
@@ -142,10 +142,30 @@ export function getAuthErrorMessage(error: unknown) {
       case "auth/too-many-requests":
         return "Too many attempts. Please wait a while and try again.";
 
+      case "auth/expired-action-code":
+        return "This reset link has expired. Please request a new one.";
+
+      case "auth/invalid-action-code":
+        return "This reset link is invalid or has already been used.";
+
+      case "auth/weak-password":
+        return "Password should be at least 6 characters.";
+
       default:
         return `Authentication error: ${error.code}`;
     }
   }
 
   return "Something went wrong. Please try again.";
+}
+
+export async function verifyResetCode(oobCode: string) {
+  return verifyPasswordResetCode(auth, oobCode);
+}
+
+export async function confirmNewPassword(
+  oobCode: string,
+  newPassword: string
+) {
+  return confirmPasswordReset(auth, oobCode, newPassword);
 }
