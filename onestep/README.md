@@ -60,6 +60,7 @@ Instead of overwhelming users with long task lists, streak pressure, or aggressi
 ---
 
 Project Structure
+```txt
 onestep/
 ├── public/
 │
@@ -143,7 +144,7 @@ onestep/
 ├── postcss.config.mjs
 ├── README.md
 └── tsconfig.json
-
+```
 Notes
 src/app/page.tsx is the landing page.
 src/app/auth/login/page.tsx is the login page.
@@ -235,51 +236,7 @@ focusSessions
 
 ---
 
-## Firestore Security Rules
 
-Use Firestore rules that only allow authenticated users to access their own data.
-
-Example:
-
-```js
-rules_version = '2';
-
-service cloud.firestore {
-  match /databases/{database}/documents {
-
-    match /users/{userId} {
-      allow read, write: if request.auth != null
-        && request.auth.uid == userId;
-    }
-
-    match /moods/{moodId} {
-      allow create: if request.auth != null
-        && request.resource.data.userId == request.auth.uid;
-
-      allow read, update, delete: if request.auth != null
-        && resource.data.userId == request.auth.uid;
-    }
-
-    match /tasks/{taskId} {
-      allow create: if request.auth != null
-        && request.resource.data.userId == request.auth.uid;
-
-      allow read, update, delete: if request.auth != null
-        && resource.data.userId == request.auth.uid;
-    }
-
-    match /focusSessions/{sessionId} {
-      allow create: if request.auth != null
-        && request.resource.data.userId == request.auth.uid;
-
-      allow read, update, delete: if request.auth != null
-        && resource.data.userId == request.auth.uid;
-    }
-  }
-}
-```
-
----
 
 ## Environment Safety
 
