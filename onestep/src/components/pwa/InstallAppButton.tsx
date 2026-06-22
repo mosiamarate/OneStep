@@ -1,6 +1,6 @@
 "use client";
 
-import { useInstallPrompt } from "../pwa/InstallPromptProvider";
+import { useInstallPrompt } from "../../components/pwa/InstallPromptProvider";
 
 export default function InstallAppButton() {
   const { canInstall, installApp } = useInstallPrompt();
@@ -12,19 +12,22 @@ export default function InstallAppButton() {
   return (
     <div
       className="
-        mt-6
-        rounded-2xl
-        border
-        border-blue-500/20
-        bg-blue-500/10
-        p-5
+        mt-8
+        flex
+        flex-col
+        items-center
+        justify-center
+        bg-transparent
+        px-6
+        py-8
+        text-center
       "
     >
       <h3 className="font-semibold text-white">
         Install OneStep
       </h3>
 
-      <p className="mt-2 text-sm leading-relaxed text-slate-400">
+      <p className="mt-2 max-w-md text-sm leading-relaxed text-slate-400">
         Add OneStep to your device so you can open it like a normal app.
       </p>
 
@@ -32,10 +35,10 @@ export default function InstallAppButton() {
         type="button"
         onClick={installApp}
         className="
-          mt-4
+          mt-5
           rounded-xl
           bg-blue-500
-          px-5
+          px-6
           py-3
           text-sm
           font-medium

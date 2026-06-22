@@ -11,10 +11,19 @@ import {
 } from "firebase/firestore";
 
 import ProtectedRoute from "../../components/auth/ProtectedRoute";
-import { db } from "../../lib/firebase";
-import { useAuth } from "../../hooks/useAuth";
-
 import Footer from "../../components/layout/Footer";
+import { useAuth } from "../../hooks/useAuth";
+import { db } from "../../lib/firebase";
+
+interface WindowWithDocumentPictureInPicture extends Window {
+  documentPictureInPicture?: {
+    requestWindow: (options?: {
+      width?: number;
+      height?: number;
+      preferInitialWindowPlacement?: boolean;
+    }) => Promise<Window>;
+  };
+}
 
 function formatTime(totalSeconds: number) {
   const minutes = Math.floor(totalSeconds / 60);
@@ -31,6 +40,9 @@ export default function FocusClient() {
   const rawTime = searchParams.get("time");
   const taskTitle = searchParams.get("task") || "Your focus task";
   const taskId = searchParams.get("taskId");
+
+  const pipWindowRef = useRef<Window | null>(null);
+  const completionSavedRef = useRef(false);
 
   const durationMinutes = useMemo(() => {
     const parsedTime = Number(rawTime);
@@ -54,8 +66,6 @@ export default function FocusClient() {
   const [savingCompletion, setSavingCompletion] = useState(false);
   const [endingSession, setEndingSession] = useState(false);
   const [saveError, setSaveError] = useState("");
-
-  const completionSavedRef = useRef(false);
 
   const progress = useMemo(() => {
     const completedSeconds = totalSeconds - seconds;
@@ -92,7 +102,9 @@ export default function FocusClient() {
     } catch (error) {
       console.error("Error saving completed session:", error);
       completionSavedRef.current = false;
-      setSaveError("Your session finished, but we couldn’t save it. Please try again.");
+      setSaveError(
+        "Your session finished, but we couldn’t save it. Please try again."
+      );
     } finally {
       setSavingCompletion(false);
     }
@@ -122,6 +134,45 @@ export default function FocusClient() {
     }
   }, [seconds, completed, saveCompletedSession]);
 
+  useEffect(() => {
+    const pipWindow = pipWindowRef.current;
+
+    if (!pipWindow || pipWindow.closed) return;
+
+    const timeElement = pipWindow.document.getElementById("mini-time");
+    const toggleButton = pipWindow.document.getElementById(
+      "mini-toggle"
+    ) as HTMLButtonElement | null;
+    const statusElement = pipWindow.document.getElementById("mini-status");
+
+    if (timeElement) {
+      timeElement.textContent = formatTime(seconds);
+    }
+
+    if (toggleButton) {
+      toggleButton.textContent = running ? "Pause" : "Resume";
+      toggleButton.disabled = completed;
+    }
+
+    if (statusElement) {
+      statusElement.textContent = completed
+        ? "Session complete."
+        : running
+        ? "Timer is running."
+        : "Timer is paused.";
+    }
+  }, [seconds, running, completed]);
+
+  useEffect(() => {
+    return () => {
+      const pipWindow = pipWindowRef.current;
+
+      if (pipWindow && !pipWindow.closed) {
+        pipWindow.close();
+      }
+    };
+  }, []);
+
   const handlePauseResume = () => {
     setRunning((current) => !current);
   };
@@ -136,6 +187,12 @@ export default function FocusClient() {
   const handleEndSession = async () => {
     try {
       setEndingSession(true);
+
+      const pipWindow = pipWindowRef.current;
+
+      if (pipWindow && !pipWindow.closed) {
+        pipWindow.close();
+      }
 
       if (taskId) {
         await updateDoc(doc(db, "tasks", taskId), {
@@ -161,6 +218,199 @@ export default function FocusClient() {
 
   const handleFinishToday = () => {
     router.replace("/dashboard");
+  };
+
+  const openMiniTimer = async () => {
+    try {
+      const existingWindow = pipWindowRef.current;
+
+      if (existingWindow && !existingWindow.closed) {
+        existingWindow.focus();
+        return;
+      }
+
+      const currentWindow = window as WindowWithDocumentPictureInPicture;
+
+      if (!currentWindow.documentPictureInPicture) {
+        alert("Mini timer is not supported in this browser. Try Chrome or Edge.");
+        return;
+      }
+
+      const pipWindow =
+        await currentWindow.documentPictureInPicture.requestWindow({
+          width: 320,
+          height: 270,
+          preferInitialWindowPlacement: false,
+        });
+
+      pipWindowRef.current = pipWindow;
+
+      pipWindow.document.body.innerHTML = `
+        <main class="mini-timer">
+          <p class="label">ONESTEP</p>
+
+          <h1 id="mini-time">${formatTime(seconds)}</h1>
+
+          <p id="mini-status">
+            ${
+              completed
+                ? "Session complete."
+                : running
+                ? "Timer is running."
+                : "Timer is paused."
+            }
+          </p>
+
+          <p id="mini-task">${taskTitle || "Focus session"}</p>
+
+          <div class="controls">
+            <button id="mini-toggle" ${completed ? "disabled" : ""}>
+              ${running ? "Pause" : "Resume"}
+            </button>
+
+            <button id="mini-reset">
+              Reset
+            </button>
+
+            <button id="mini-end">
+              End
+            </button>
+          </div>
+        </main>
+      `;
+
+      const style = pipWindow.document.createElement("style");
+
+      style.textContent = `
+        * {
+          box-sizing: border-box;
+        }
+
+        body {
+          margin: 0;
+          min-height: 100vh;
+          display: grid;
+          place-items: center;
+          background: linear-gradient(180deg, #020617, #0f172a, #020617);
+          color: white;
+          font-family: Arial, sans-serif;
+        }
+
+        .mini-timer {
+          width: 100%;
+          min-height: 100vh;
+          padding: 22px;
+          text-align: center;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+        }
+
+        .label {
+          margin: 0 0 12px;
+          color: #60a5fa;
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.35em;
+        }
+
+        h1 {
+          margin: 0;
+          font-size: 48px;
+          line-height: 1;
+          letter-spacing: -0.04em;
+        }
+
+        #mini-status {
+          margin: 10px 0 0;
+          color: #94a3b8;
+          font-size: 13px;
+        }
+
+        #mini-task {
+          margin: 12px auto 20px;
+          max-width: 250px;
+          color: #cbd5e1;
+          font-size: 14px;
+          line-height: 1.5;
+        }
+
+        .controls {
+          display: flex;
+          justify-content: center;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+
+        button {
+          border: 0;
+          border-radius: 12px;
+          padding: 10px 14px;
+          background: #2563eb;
+          color: white;
+          font-size: 13px;
+          font-weight: 700;
+          cursor: pointer;
+        }
+
+        button:hover {
+          background: #1d4ed8;
+        }
+
+        button:disabled {
+          cursor: not-allowed;
+          opacity: 0.5;
+        }
+
+        #mini-reset {
+          background: #0f172a;
+          border: 1px solid #334155;
+          color: #cbd5e1;
+        }
+
+        #mini-reset:hover {
+          background: #1e293b;
+        }
+
+        #mini-end {
+          background: #334155;
+        }
+
+        #mini-end:hover {
+          background: #475569;
+        }
+      `;
+
+      pipWindow.document.head.appendChild(style);
+
+      pipWindow.document
+        .getElementById("mini-toggle")
+        ?.addEventListener("click", () => {
+          setRunning((current) => !current);
+        });
+
+      pipWindow.document
+        .getElementById("mini-reset")
+        ?.addEventListener("click", () => {
+          setRunning(false);
+          setSeconds(totalSeconds);
+          setCompleted(false);
+          setSaveError("");
+        });
+
+      pipWindow.document
+        .getElementById("mini-end")
+        ?.addEventListener("click", () => {
+          handleEndSession();
+        });
+
+      pipWindow.addEventListener("pagehide", () => {
+        pipWindowRef.current = null;
+      });
+    } catch (error) {
+      console.error("Error opening mini timer:", error);
+      alert("Could not open the mini timer. Please try again.");
+    }
   };
 
   return (
@@ -257,7 +507,7 @@ export default function FocusClient() {
               )}
 
               {!completed && (
-                <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
                   <button
                     type="button"
                     onClick={handlePauseResume}
@@ -298,6 +548,28 @@ export default function FocusClient() {
                     "
                   >
                     Reset
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={openMiniTimer}
+                    disabled={authLoading || endingSession}
+                    className="
+                      rounded-xl
+                      border
+                      border-blue-500/30
+                      px-6
+                      py-3
+                      font-medium
+                      text-blue-300
+                      transition
+                      hover:bg-blue-500/10
+                      hover:text-blue-200
+                      disabled:cursor-not-allowed
+                      disabled:opacity-50
+                    "
+                  >
+                    Mini Timer
                   </button>
 
                   <button
@@ -397,8 +669,8 @@ export default function FocusClient() {
               )}
             </div>
           </div>
-          
         </section>
+
         <Footer />
       </main>
     </ProtectedRoute>

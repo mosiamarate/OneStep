@@ -9,6 +9,7 @@ import { logoutUser } from "../../lib/auth";
 import { useUserProfile } from "../../hooks/useUserProfile";
 import Footer from "../../components/layout/Footer";
 import InstallAppButton from "../../components/pwa/InstallAppButton";
+import Image from "next/image";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -54,9 +55,19 @@ export default function DashboardPage() {
           <div className="w-full">
             <header className="mb-10 flex items-center justify-between gap-4">
               <div>
-                <p className="mb-2 text-sm font-medium uppercase tracking-[0.3em] text-blue-400">
-                  OneStep
-                </p>
+                <div className="flex items-center gap-3">
+                  <Image
+                    src="/icons/icon-web.webp"
+                    alt="OneStep logo"
+                    width={28}
+                    height={28}
+                    className="rounded-md"
+                  />
+
+                  <p className="text-sm font-bold tracking-[0.4em] text-blue-400">
+                    ONESTEP
+                  </p>
+                </div>
 
                 <h1 className="text-3xl font-semibold tracking-tight text-white md:text-5xl">
                     Welcome back, {profileLoading ? "..." : displayName}.
