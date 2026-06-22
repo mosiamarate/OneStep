@@ -3,6 +3,7 @@ import "./globals.css";
 
 import PWARegister from "../components/layout/PWARegister";
 import { InstallPromptProvider } from "../components/pwa/InstallPromptProvider";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: {
@@ -35,7 +36,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <PWARegister />
-
+        <Analytics />
         <InstallPromptProvider>
           {children}
         </InstallPromptProvider>
