@@ -146,6 +146,7 @@ onestep/
 └── tsconfig.json
 ```
 Notes
+```
 src/app/page.tsx is the landing page.
 src/app/auth/login/page.tsx is the login page.
 src/app/auth/signup/page.tsx is the signup page.
@@ -157,13 +158,13 @@ src/app/focus/page.tsx loads the focus session page.
 src/components/focus/FocusClient.tsx contains the main focus timer logic.
 src/lib/firebase.ts handles Firebase initialization.
 src/lib/auth.ts contains authentication helper functions.
-
+````
 ## Getting Started
 
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/onestep.git
+git clone https://github.com/mosiamarate/OneStep.git
 cd onestep
 ```
 
