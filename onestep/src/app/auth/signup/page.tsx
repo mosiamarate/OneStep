@@ -91,11 +91,22 @@ export default function SignupPage() {
   };
 
   return (
-    <main
-      className="
-        relative min-h-screen overflow-hidden
-        bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950
-        flex items-center justify-center px-4 py-10
+     <main
+        className="
+        relative
+        min-h-dvh
+        w-full
+        overflow-x-hidden
+        bg-gradient-to-b
+        from-slate-950
+        via-slate-900
+        to-slate-950
+        px-4
+        py-6
+        text-white
+        sm:px-6
+        sm:py-8
+        lg:px-8
       "
     >
       <div className="pointer-events-none absolute -top-32 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl" />

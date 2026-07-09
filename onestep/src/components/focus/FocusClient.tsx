@@ -25,11 +25,53 @@ interface WindowWithDocumentPictureInPicture extends Window {
   };
 }
 
+const afterSessionMoods = [
+  {
+    id: "better",
+    emoji: "🌿",
+    label: "Better",
+  },
+  {
+    id: "proud",
+    emoji: "🌱",
+    label: "Proud",
+  },
+  {
+    id: "calm",
+    emoji: "😌",
+    label: "Calm",
+  },
+  {
+    id: "tired",
+    emoji: "😴",
+    label: "Tired",
+  },
+  {
+    id: "same",
+    emoji: "🤍",
+    label: "Same",
+  },
+  {
+    id: "stressed",
+    emoji: "🌧️",
+    label: "Still stressed",
+  },
+];
+
 function formatTime(totalSeconds: number) {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
 
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 export default function FocusClient() {
@@ -43,6 +85,7 @@ export default function FocusClient() {
 
   const pipWindowRef = useRef<Window | null>(null);
   const completionSavedRef = useRef(false);
+  const secondsRef = useRef(0);
 
   const durationMinutes = useMemo(() => {
     const parsedTime = Number(rawTime);
@@ -67,10 +110,28 @@ export default function FocusClient() {
   const [endingSession, setEndingSession] = useState(false);
   const [saveError, setSaveError] = useState("");
 
+  const [afterMood, setAfterMood] = useState("");
+  const [afterMoodNote, setAfterMoodNote] = useState("");
+  const [savingReflection, setSavingReflection] = useState(false);
+
+  useEffect(() => {
+    secondsRef.current = seconds;
+  }, [seconds]);
+
   const progress = useMemo(() => {
     const completedSeconds = totalSeconds - seconds;
     return Math.min(100, Math.max(0, (completedSeconds / totalSeconds) * 100));
   }, [seconds, totalSeconds]);
+
+  const closeMiniTimer = () => {
+    const pipWindow = pipWindowRef.current;
+
+    if (pipWindow && !pipWindow.closed) {
+      pipWindow.close();
+    }
+
+    pipWindowRef.current = null;
+  };
 
   const saveCompletedSession = useCallback(async () => {
     if (completionSavedRef.current) return;
@@ -109,6 +170,45 @@ export default function FocusClient() {
       setSavingCompletion(false);
     }
   }, [durationMinutes, taskId, taskTitle, user]);
+
+  const saveAfterSessionMood = useCallback(async () => {
+    if (!user) return;
+
+    const hasMood = afterMood.trim().length > 0;
+    const hasNote = afterMoodNote.trim().length > 0;
+
+    if (!hasMood && !hasNote) {
+      return;
+    }
+
+    const selectedMood = afterSessionMoods.find(
+      (mood) => mood.id === afterMood
+    );
+
+    try {
+      setSavingReflection(true);
+      setSaveError("");
+
+      await addDoc(collection(db, "moods"), {
+        userId: user.uid,
+        mood: afterMood || "custom",
+        moodLabel: selectedMood?.label || "After-session reflection",
+        note: afterMoodNote.trim(),
+        phase: "after_focus",
+        taskId: taskId || null,
+        taskTitle,
+        durationMinutes,
+        createdAt: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error("Error saving after-session mood:", error);
+      setSaveError(
+        "Your session was saved, but your reflection could not be saved."
+      );
+    } finally {
+      setSavingReflection(false);
+    }
+  }, [afterMood, afterMoodNote, durationMinutes, taskId, taskTitle, user]);
 
   useEffect(() => {
     if (!running || completed) return;
@@ -150,7 +250,12 @@ export default function FocusClient() {
     }
 
     if (toggleButton) {
-      toggleButton.textContent = running ? "Pause" : "Resume";
+      toggleButton.textContent = completed
+        ? "Complete"
+        : running
+        ? "Pause"
+        : "Resume";
+
       toggleButton.disabled = completed;
     }
 
@@ -165,11 +270,7 @@ export default function FocusClient() {
 
   useEffect(() => {
     return () => {
-      const pipWindow = pipWindowRef.current;
-
-      if (pipWindow && !pipWindow.closed) {
-        pipWindow.close();
-      }
+      closeMiniTimer();
     };
   }, []);
 
@@ -178,27 +279,25 @@ export default function FocusClient() {
   };
 
   const handleReset = () => {
+    completionSavedRef.current = false;
     setSeconds(totalSeconds);
     setRunning(false);
     setCompleted(false);
     setSaveError("");
+    setAfterMood("");
+    setAfterMoodNote("");
   };
 
   const handleEndSession = async () => {
     try {
       setEndingSession(true);
-
-      const pipWindow = pipWindowRef.current;
-
-      if (pipWindow && !pipWindow.closed) {
-        pipWindow.close();
-      }
+      closeMiniTimer();
 
       if (taskId) {
         await updateDoc(doc(db, "tasks", taskId), {
           status: "ended",
           endedAt: serverTimestamp(),
-          remainingSeconds: seconds,
+          remainingSeconds: secondsRef.current,
           updatedAt: serverTimestamp(),
         });
       }
@@ -212,11 +311,15 @@ export default function FocusClient() {
     }
   };
 
-  const handleStartAnotherSession = () => {
+  const handleStartAnotherSession = async () => {
+    await saveAfterSessionMood();
+    closeMiniTimer();
     router.replace("/mood");
   };
 
-  const handleFinishToday = () => {
+  const handleFinishToday = async () => {
+    await saveAfterSessionMood();
+    closeMiniTimer();
     router.replace("/dashboard");
   };
 
@@ -261,11 +364,11 @@ export default function FocusClient() {
             }
           </p>
 
-          <p id="mini-task">${taskTitle || "Focus session"}</p>
+          <p id="mini-task">${escapeHtml(taskTitle || "Focus session")}</p>
 
           <div class="controls">
             <button id="mini-toggle" ${completed ? "disabled" : ""}>
-              ${running ? "Pause" : "Resume"}
+              ${completed ? "Complete" : running ? "Pause" : "Resume"}
             </button>
 
             <button id="mini-reset">
@@ -392,10 +495,7 @@ export default function FocusClient() {
       pipWindow.document
         .getElementById("mini-reset")
         ?.addEventListener("click", () => {
-          setRunning(false);
-          setSeconds(totalSeconds);
-          setCompleted(false);
-          setSaveError("");
+          handleReset();
         });
 
       pipWindow.document
@@ -622,11 +722,100 @@ export default function FocusClient() {
                     )}
                   </div>
 
+                  <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-6 text-left">
+                    <div className="mb-5 text-center">
+                      <h3 className="text-xl font-semibold text-white">
+                        How do you feel after this session?
+                      </h3>
+
+                      <p className="mt-2 text-sm text-slate-400">
+                        This is optional. It helps you notice how focus affects
+                        your mood.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      {afterSessionMoods.map((mood) => {
+                        const isSelected = afterMood === mood.id;
+
+                        return (
+                          <button
+                            key={mood.id}
+                            type="button"
+                            onClick={() =>
+                              setAfterMood((currentMood) =>
+                                currentMood === mood.id ? "" : mood.id
+                              )
+                            }
+                            disabled={savingReflection}
+                            className={`
+                              rounded-2xl
+                              border
+                              p-4
+                              text-center
+                              transition
+                              disabled:cursor-not-allowed
+                              disabled:opacity-50
+                              ${
+                                isSelected
+                                  ? "border-blue-500 bg-blue-500/10 text-white"
+                                  : "border-slate-800 bg-slate-900/60 text-slate-300 hover:border-slate-700"
+                              }
+                            `}
+                          >
+                            <span className="block text-2xl">
+                              {mood.emoji}
+                            </span>
+
+                            <span className="mt-2 block text-sm font-medium">
+                              {mood.label}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <textarea
+                      value={afterMoodNote}
+                      onChange={(event) =>
+                        setAfterMoodNote(event.target.value)
+                      }
+                      disabled={savingReflection}
+                      placeholder="Add a short note? Optional"
+                      rows={3}
+                      className="
+                        mt-5
+                        w-full
+                        resize-none
+                        rounded-2xl
+                        border
+                        border-slate-800
+                        bg-slate-950/70
+                        px-4
+                        py-3
+                        text-sm
+                        text-white
+                        outline-none
+                        transition
+                        placeholder:text-slate-600
+                        focus:border-blue-500/60
+                        disabled:cursor-not-allowed
+                        disabled:opacity-50
+                      "
+                    />
+
+                    {savingReflection && (
+                      <p className="mt-3 text-center text-sm text-slate-400">
+                        Saving your reflection...
+                      </p>
+                    )}
+                  </div>
+
                   <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
                     <button
                       type="button"
                       onClick={handleStartAnotherSession}
-                      disabled={savingCompletion}
+                      disabled={savingCompletion || savingReflection}
                       className="
                         rounded-xl
                         bg-blue-500
@@ -646,7 +835,7 @@ export default function FocusClient() {
                     <button
                       type="button"
                       onClick={handleFinishToday}
-                      disabled={savingCompletion}
+                      disabled={savingCompletion || savingReflection}
                       className="
                         rounded-xl
                         border

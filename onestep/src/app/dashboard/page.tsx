@@ -1,106 +1,155 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 
 import ProtectedRoute from "../../components/auth/ProtectedRoute";
-import Button from "../../components/ui/Button";
-import { useAuth } from "../../hooks/useAuth";
-import { logoutUser } from "../../lib/auth";
-import { useUserProfile } from "../../hooks/useUserProfile";
 import Footer from "../../components/layout/Footer";
 import InstallAppButton from "../../components/pwa/InstallAppButton";
-import Image from "next/image";
+import { logoutUser } from "../../lib/auth";
+import { useAuth } from "../../hooks/useAuth";
+import { useUserProfile } from "../../hooks/useUserProfile";
+import { getDashboardStats } from "../../services/dashboardService";
+import {
+  emptyDashboardStats,
+  type DashboardStats,
+} from "../../types/dashboard";
+
+function getFirstName(name?: string | null) {
+  if (!name) return "";
+
+  return name.trim().split(" ")[0];
+}
+
+function getGreeting() {
+  const hour = new Date().getHours();
+
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+
+  return "Good evening";
+}
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const { user } = useAuth();
-
+  const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading } = useUserProfile();
 
-    const getFirstName = (name?: string | null) => {
-    if (!name) return "";
-    return name.trim().split(" ")[0];
-    };
+  const [stats, setStats] = useState<DashboardStats>(emptyDashboardStats);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState("");
 
-    const displayName =
+  const displayName =
     getFirstName(profile?.fullName) ||
     getFirstName(user?.displayName) ||
     "there";
 
+  const greeting = useMemo(() => getGreeting(), []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadDashboardStats() {
+      if (!user) return;
+
+      try {
+        setStatsLoading(true);
+        setStatsError("");
+
+        const dashboardStats = await getDashboardStats(user.uid);
+
+        if (!cancelled) {
+          setStats(dashboardStats);
+        }
+      } catch (error) {
+        console.error("Error loading dashboard stats:", error);
+
+        if (!cancelled) {
+          setStatsError("We couldn’t load your dashboard stats right now.");
+        }
+      } finally {
+        if (!cancelled) {
+          setStatsLoading(false);
+        }
+      }
+    }
+
+    loadDashboardStats();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
   const handleLogout = async () => {
     await logoutUser();
-    router.replace("/auth/login");
   };
 
   return (
     <ProtectedRoute>
-      <main
+          <main
         className="
-          relative
-          min-h-screen
-          overflow-hidden
-          bg-gradient-to-b
-          from-slate-950
-          via-slate-900
-          to-slate-950
-          px-4
-          py-10
-          text-white
-        "
-      >
+        relative
+        min-h-dvh
+        w-full
+        overflow-x-hidden
+        bg-gradient-to-b
+        from-slate-950
+        via-slate-900
+        to-slate-950
+        px-4
+        py-6
+        text-white
+        sm:px-6
+        sm:py-8
+        lg:px-8
+      "
+    >
         <div className="pointer-events-none absolute -top-32 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-blue-500/10 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-32 right-0 h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl" />
 
-        <section className="relative z-10 mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-5xl items-center">
-          <div className="w-full">
-            <header className="mb-10 flex items-center justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-3">
-                  <Image
-                    src="/icons/icon-web.webp"
-                    alt="OneStep logo"
-                    width={28}
-                    height={28}
-                    className="rounded-md"
-                  />
+        <section className="relative z-10 mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-6xl flex-col">
+          <header className="mb-10 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <Image
+                src="/icons/icon-192x192.png"
+                alt="OneStep logo"
+                width={32}
+                height={32}
+                className="rounded-lg"
+              />
 
-                  <p className="text-sm font-bold tracking-[0.4em] text-blue-400">
-                    ONESTEP
-                  </p>
-                </div>
+              <span className="text-sm font-bold tracking-[0.35em] text-blue-400">
+                ONESTEP
+              </span>
+            </div>
 
-                <h1 className="text-3xl font-semibold tracking-tight text-white md:text-5xl">
-                    Welcome back, {profileLoading ? "..." : displayName}.
-                </h1>
+            <button
+              type="button"
+              onClick={handleLogout}
+              disabled={authLoading}
+              className="
+                rounded-xl
+                border
+                border-slate-700
+                px-4
+                py-2
+                text-sm
+                font-medium
+                text-slate-300
+                transition
+                hover:border-slate-500
+                hover:text-white
+                disabled:cursor-not-allowed
+                disabled:opacity-50
+              "
+            >
+              Logout
+            </button>
+          </header>
 
-                <p className="mt-3 max-w-xl text-slate-400">
-                  Slow down, check in with yourself, and focus on one task at a
-                  time.
-                </p>
-              </div>
-
-              <button
-                onClick={handleLogout}
-                className="
-                  hidden
-                  rounded-xl
-                  border
-                  border-slate-800
-                  px-4
-                  py-2
-                  text-sm
-                  text-slate-400
-                  transition
-                  hover:border-slate-700
-                  hover:text-white
-                  sm:block
-                "
-              >
-                Logout
-              </button>
-            </header>
-
-            <div
+          <div className="grid flex-1 gap-6 lg:grid-cols-[1.25fr_0.75fr]">
+            <section
               className="
                 rounded-3xl
                 border
@@ -112,142 +161,209 @@ export default function DashboardPage() {
                 md:p-8
               "
             >
-              <div className="grid gap-6 md:grid-cols-[1.2fr_0.8fr]">
-                <div>
-                  <h2 className="text-2xl font-semibold text-white">
-                    Start your next gentle focus session.
-                  </h2>
+              <p className="mb-3 text-sm font-medium uppercase tracking-[0.3em] text-blue-400">
+                Dashboard
+              </p>
 
-                  <p className="mt-3 text-slate-400">
-                    First, take a short emotional check-in. Then choose one
-                    small task and begin your timer.
-                  </p>
+              <h1 className="mb-4 text-4xl font-semibold tracking-tight text-white md:text-5xl">
+                {greeting}, {profileLoading ? "..." : displayName}.
+              </h1>
 
-                  <div className="mt-6 max-w-sm">
-                    <Button onClick={() => router.push("/mood")}>
-                      Start Check-In
-                    </Button>
-                  </div>
-                </div>
+              <p className="max-w-2xl text-slate-400">
+                Start calmly. Check in with yourself, choose one task, and focus
+                gently.
+              </p>
 
-                <div
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href="/mood"
                   className="
-                    rounded-2xl
-                    border
-                    border-slate-800
-                    bg-slate-950/50
-                    p-5
+                    inline-flex
+                    items-center
+                    justify-center
+                    rounded-xl
+                    bg-blue-500
+                    px-6
+                    py-3
+                    font-medium
+                    text-white
+                    transition
+                    hover:bg-blue-600
+                    active:scale-[0.98]
                   "
                 >
-                  <p className="mb-4 text-sm font-medium uppercase tracking-[0.2em] text-slate-500">
-                    Today’s Flow
-                  </p>
+                  Start Check-In
+                </Link>
 
-                  <div className="space-y-4">
-                    <FlowStep number="1" title="Check your mood" />
-                    <FlowStep number="2" title="Choose one task" />
-                    <FlowStep number="3" title="Set your timer" />
-                    <FlowStep number="4" title="Focus gently" />
+                <Link
+                  href="/task"
+                  className="
+                    inline-flex
+                    items-center
+                    justify-center
+                    rounded-xl
+                    border
+                    border-slate-700
+                    px-6
+                    py-3
+                    font-medium
+                    text-slate-300
+                    transition
+                    hover:border-slate-600
+                    hover:text-white
+                    active:scale-[0.98]
+                  "
+                >
+                  Go to Task
+                </Link>
+              </div>
+
+              <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-5">
+                  <p className="text-sm text-slate-500">Today’s mood</p>
+
+                  <p className="mt-3 text-2xl font-semibold text-white">
+                    {statsLoading
+                      ? "..."
+                      : stats.latestMood
+                      ? `${stats.latestMood.emoji} ${stats.latestMood.label}`
+                      : "No check-in"}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-5">
+                  <p className="text-sm text-slate-500">Focus time</p>
+
+                  <p className="mt-3 text-2xl font-semibold text-white">
+                    {statsLoading ? "..." : `${stats.focusMinutesToday} min`}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-5">
+                  <p className="text-sm text-slate-500">Tasks completed</p>
+
+                  <p className="mt-3 text-2xl font-semibold text-white">
+                    {statsLoading ? "..." : stats.completedTasksToday}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-5">
+                  <p className="text-sm text-slate-500">Focus sessions</p>
+
+                  <p className="mt-3 text-2xl font-semibold text-white">
+                    {statsLoading ? "..." : stats.focusSessionsToday}
+                  </p>
+                </div>
+              </div>
+
+              {statsError && (
+                <div className="mt-6 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                  {statsError}
+                </div>
+              )}
+
+              <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-950/40 p-6">
+                <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">
+                  Last focus
+                </p>
+
+                <h2 className="mt-3 text-xl font-semibold text-white">
+                  {statsLoading
+                    ? "Loading..."
+                    : stats.lastFocusTask || "No focus session completed yet"}
+                </h2>
+
+                <p className="mt-2 text-sm leading-relaxed text-slate-400">
+                  {stats.lastFocusTask
+                    ? "Good job showing up for one task today."
+                    : "Your next focus session will appear here after you complete it."}
+                </p>
+              </div>
+
+              <InstallAppButton />
+            </section>
+
+            <aside className="space-y-6">
+              <div
+                className="
+                  rounded-3xl
+                  border
+                  border-slate-800
+                  bg-slate-900/70
+                  p-6
+                  shadow-2xl
+                  backdrop-blur-xl
+                "
+              >
+                <h2 className="text-xl font-semibold text-white">
+                  Today’s Flow
+                </h2>
+
+                <div className="mt-6 space-y-4">
+                  <div className="rounded-2xl border border-blue-500/20 bg-blue-500/10 p-4">
+                    <p className="text-sm font-medium text-blue-300">
+                      1. Check in
+                    </p>
+                    <p className="mt-1 text-sm text-slate-400">
+                      Notice how you feel before you start.
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+                    <p className="text-sm font-medium text-slate-200">
+                      2. Choose one task
+                    </p>
+                    <p className="mt-1 text-sm text-slate-400">
+                      Keep it small, clear, and realistic.
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+                    <p className="text-sm font-medium text-slate-200">
+                      3. Focus gently
+                    </p>
+                    <p className="mt-1 text-sm text-slate-400">
+                      Use the timer and return when distracted.
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+                    <p className="text-sm font-medium text-emerald-300">
+                      4. Reflect
+                    </p>
+                    <p className="mt-1 text-sm text-slate-400">
+                      Notice how you feel after focusing.
+                    </p>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-3">
-              <DashboardCard
-                title="Mood first"
-                text="Your emotions matter before productivity."
-              />
-
-              <DashboardCard
-                title="One task"
-                text="No overwhelming lists. Just one clear focus."
-              />
-
-              <DashboardCard
-                title="Gentle progress"
-                text="Showing up counts, even when energy is low."
-              />
-            </div>
-            <InstallAppButton />
-            <div className="mt-6 sm:hidden">
-              <button
-                onClick={handleLogout}
+              <div
                 className="
-                  w-full
-                  rounded-xl
+                  rounded-3xl
                   border
                   border-slate-800
-                  px-4
-                  py-3
-                  text-sm
-                  text-slate-400
-                  transition
-                  hover:border-slate-700
-                  hover:text-white
+                  bg-slate-900/70
+                  p-6
+                  shadow-2xl
+                  backdrop-blur-xl
                 "
               >
-                Logout
-              </button>
-            </div>
+                <h2 className="text-xl font-semibold text-white">
+                  Gentle reminder
+                </h2>
+
+                <p className="mt-3 text-sm leading-relaxed text-slate-400">
+                  Progress is not only about doing more. Sometimes progress is
+                  choosing one thing and giving it your attention.
+                </p>
+              </div>
+            </aside>
           </div>
         </section>
+
         <Footer />
       </main>
     </ProtectedRoute>
-  );
-}
-
-function FlowStep({
-  number,
-  title,
-}: {
-  number: string;
-  title: string;
-}) {
-  return (
-    <div className="flex items-center gap-3">
-      <div
-        className="
-          flex
-          h-8
-          w-8
-          items-center
-          justify-center
-          rounded-full
-          bg-blue-500/10
-          text-sm
-          font-semibold
-          text-blue-400
-        "
-      >
-        {number}
-      </div>
-
-      <p className="text-sm text-slate-300">{title}</p>
-    </div>
-  );
-}
-
-function DashboardCard({
-  title,
-  text,
-}: {
-  title: string;
-  text: string;
-}) {
-  return (
-    <div
-      className="
-        rounded-2xl
-        border
-        border-slate-800
-        bg-slate-900/60
-        p-5
-      "
-    >
-      <h3 className="font-semibold text-white">{title}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-slate-400">{text}</p>
-    </div>
   );
 }
