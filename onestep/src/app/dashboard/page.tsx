@@ -212,6 +212,30 @@ export default function DashboardPage() {
                 >
                   Go to Task
                 </Link>
+
+                <Link
+                  href="/history"
+                  className="
+                    inline-flex
+                    w-full
+                    items-center
+                    justify-center
+                    rounded-xl
+                    border
+                    border-slate-700
+                    px-6
+                    py-3
+                    font-medium
+                    text-slate-300
+                    transition
+                    hover:border-slate-600
+                    hover:text-white
+                    active:scale-[0.98]
+                    sm:w-auto
+                  "
+                >
+                  View History
+                </Link>
               </div>
 
               <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

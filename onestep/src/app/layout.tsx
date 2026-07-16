@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 import PWARegister from "../components/layout/PWARegister";
+import UpdateAvailablePrompt from "../components/layout/updateAvailablePrompt";
 import { InstallPromptProvider } from "../components/pwa/InstallPromptProvider";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -68,7 +69,10 @@ export default function RootLayout({
         <PWARegister />
         <Analytics />
 
-        <InstallPromptProvider>{children}</InstallPromptProvider>
+        <InstallPromptProvider>
+          {children}
+          <UpdateAvailablePrompt />
+        </InstallPromptProvider>
       </body>
     </html>
   );
