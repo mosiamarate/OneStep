@@ -110,13 +110,13 @@ export default function DashboardPage() {
               <Image
                 src="/icons/icon-192x192.png"
                 alt="OneStep logo"
-                width={32}
-                height={32}
+                width={34}
+                height={34}
                 className="rounded-lg"
               />
 
               <span className="text-sm font-bold tracking-[0.35em] text-blue-400">
-                ONESTEP
+                OneStep
               </span>
             </div>
 

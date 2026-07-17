@@ -86,7 +86,7 @@ export default function HistoryPage() {
               />
 
               <span className="text-sm font-bold tracking-[0.35em] text-blue-400">
-                ONESTEP
+                OneStep
               </span>
             </Link>
 

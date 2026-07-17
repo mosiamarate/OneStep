@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Footer from "../components/layout/Footer";
+import icon from "@/public/icons/icon-2000x2000.png"
 
 export default function LandingPage() {
   return (
@@ -20,10 +21,16 @@ export default function LandingPage() {
 
           <div className="relative z-10 mx-auto w-full max-w-5xl text-center">
             <div className="mb-6">
-              <span className="text-6xl">🌿</span>
+              <img
+                src={icon.src}
+                alt="OneStep logo"
+                width={70}
+                height={70}
+                className="mx-auto rounded-lg"
+              />
             </div>
 
-            <p className="mb-4 text-sm font-medium uppercase tracking-[0.35em] text-blue-400">
+            <p className="mb-4 text-sm font-medium tracking-[0.35em] text-blue-400">
               OneStep
             </p>
 
@@ -92,6 +99,100 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
+
+        <section className="mx-auto mt-24 mb-24 max-w-6xl px-6">
+          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-blue-400">
+              How It Works
+          </p>
+
+          <h2 className="mb-10 text-4xl font-bold text-white">
+              Five simple steps to calm productivity.
+          </h2>
+
+          <div className="grid gap-6 md:grid-cols-5">
+
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6">
+
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/20 text-xl font-bold text-blue-300">
+                      1
+                  </div>
+
+                  <h3 className="mb-2 text-xl font-semibold text-white">
+                      Check In
+                  </h3>
+
+                  <p className="text-slate-400">
+                      Tell OneStep how you&apos;re feeling before starting your work.
+                  </p>
+
+              </div>
+
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6">
+
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/20 text-xl font-bold text-blue-300">
+                      2
+                  </div>
+
+                  <h3 className="mb-2 text-xl font-semibold text-white">
+                      Choose One Task
+                  </h3>
+
+                  <p className="text-slate-400">
+                      Pick one meaningful task instead of a long overwhelming list.
+                  </p>
+
+              </div>
+
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6">
+
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/20 text-xl font-bold text-blue-300">
+                      3
+                  </div>
+
+                  <h3 className="mb-2 text-xl font-semibold text-white">
+                      Focus
+                  </h3>
+
+                  <p className="text-slate-400">
+                      Start your timer and work without distractions.
+                  </p>
+
+              </div>
+
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6">
+
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/20 text-xl font-bold text-blue-300">
+                      4
+                  </div>
+
+                  <h3 className="mb-2 text-xl font-semibold text-white">
+                      Reflect
+                  </h3>
+
+                  <p className="text-slate-400">
+                      After each session, record how you feel and notice patterns.
+                  </p>
+
+              </div>
+
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6">
+
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/20 text-xl font-bold text-blue-300">
+                      5
+                  </div>
+
+                  <h3 className="mb-2 text-xl font-semibold text-white">
+                      Grow
+                  </h3>
+
+                  <p className="text-slate-400">
+                      View your history and celebrate consistent, gentle progress.
+                  </p>
+
+              </div>
+
+          </div>
+      </section>
 
         <Footer />
       </div>

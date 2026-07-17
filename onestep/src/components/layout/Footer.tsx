@@ -31,14 +31,14 @@ export default function Footer() {
             href="/privacy"
             className="text-sm text-slate-500 transition hover:text-slate-300"
           >
-            Privacy
+            OneStep Privacy
           </Link>
 
           <Link
             href="/terms"
             className="text-sm text-slate-500 transition hover:text-slate-300"
           >
-            Terms
+            OneStep Terms
           </Link>
 
           <span className="hidden text-slate-700 sm:inline">•</span>
