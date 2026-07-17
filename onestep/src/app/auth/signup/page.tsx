@@ -11,6 +11,8 @@ import AuthFooter from "../../../components/auth/AuthFooter";
 import GoogleButton from "../../../components/auth/GoogleButton";
 import Button from "../../../components/ui/Button";
 
+import Link from "next/link";
+
 import {
   getAuthErrorMessage,
   loginWithGoogle,
@@ -188,6 +190,26 @@ export default function SignupPage() {
             href="/auth/login"
           />
         </AuthCard>
+
+        <p className="text-center text-xs leading-relaxed text-slate-500">
+          By creating an account, you agree to the{" "}
+          <Link
+            href="/terms"
+            target="_blank"
+            className="text-blue-300 hover:text-blue-200"
+          >
+            Terms of Service
+          </Link>{" "}
+          and acknowledge the{" "}
+          <Link
+            href="/privacy"
+            target="_blank"
+            className="text-blue-300 hover:text-blue-200"
+          >
+            Privacy Policy
+          </Link>
+          .
+        </p>
         <Footer />
       </div>
     </main>
