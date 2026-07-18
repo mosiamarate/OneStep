@@ -100,6 +100,41 @@ export default function LandingPage() {
           </div>
         </section>
 
+        <section className="mx-auto mt-24 max-w-6xl px-6">
+          <div className="rounded-3xl border border-slate-800 bg-slate-900/40 p-10 backdrop-blur-sm">
+
+            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-blue-400">
+              What is OneStep?
+            </p>
+
+            <h2 className="mb-6 text-4xl font-bold text-white">
+              Productivity without pressure.
+            </h2>
+
+            <div className="space-y-6 text-lg leading-8 text-slate-300">
+
+              <p>
+                OneStep is a mindful productivity app designed to help students,
+                professionals, and anyone feeling overwhelmed slow down and focus on
+                what matters most.
+              </p>
+
+              <p>
+                Instead of encouraging long task lists and constant productivity,
+                OneStep guides you through a simple routine that supports both your
+                mental wellbeing and your ability to focus.
+              </p>
+
+              <p>
+                Every session begins with a short emotional check-in, followed by one
+                meaningful task, a distraction-free focus timer, and a brief reflection
+                to help you understand how your focus affects your mood over time.
+              </p>
+
+            </div>
+          </div>
+        </section>
+
         <section className="mx-auto mt-24 mb-24 max-w-6xl px-6">
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-blue-400">
               How It Works
