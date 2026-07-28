@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import Footer from "../components/layout/Footer";
 import icon from "@/public/icons/icon-2000x2000.png"
@@ -7,7 +8,9 @@ export default function LandingPage() {
     <main
       className="
         min-h-screen
-        bg-gradient-to-b
+        .bg-gradient-to-b {
+        --tw-gradient-position: to bottom in oklab;
+        background-image: linear-gradient(var(--tw-gradient-stops));}
         from-slate-950
         via-slate-900
         to-slate-950
@@ -21,8 +24,8 @@ export default function LandingPage() {
 
           <div className="relative z-10 mx-auto w-full max-w-5xl text-center">
             <div className="mb-6">
-              <img
-                src={icon.src}
+              <Image
+                src={icon}
                 alt="OneStep logo"
                 width={70}
                 height={70}

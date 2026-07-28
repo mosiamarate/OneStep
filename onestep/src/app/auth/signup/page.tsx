@@ -96,7 +96,10 @@ export default function SignupPage() {
     <main
       className="
         relative min-h-screen overflow-hidden
-        bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950
+        .bg-gradient-to-b {
+        --tw-gradient-position: to bottom in oklab;
+        background-image: linear-gradient(var(--tw-gradient-stops));
+        } from-slate-950 via-slate-900 to-slate-950
         flex items-center justify-center px-4 py-10
       "
     >

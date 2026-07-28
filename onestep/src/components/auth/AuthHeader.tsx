@@ -3,6 +3,9 @@ interface AuthHeaderProps {
   subtitle: string;
 }
 
+import Image from "next/image";
+import icon from "@/public/icons/icon-2000x2000.png"
+
 export default function AuthHeader({
   title,
   subtitle,
@@ -10,7 +13,13 @@ export default function AuthHeader({
   return (
     <div className="text-center mb-8">
       <div className="mb-4">
-        <span className="text-5xl">🌿</span>
+        <Image
+            src={icon}
+            alt="OneStep logo"
+            width={70}
+            height={70}
+            className="mx-auto rounded-lg"
+          />
       </div>
 
       <h1 className="text-4xl font-bold text-white mb-3">
