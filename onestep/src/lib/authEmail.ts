@@ -1,3 +1,5 @@
+import "server-only";
+
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 
 import PasswordReset from "../emails/PasswordReset";

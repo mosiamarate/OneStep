@@ -1,3 +1,5 @@
+import "server-only";
+
 import { createHash, randomInt, timingSafeEqual } from "crypto";
 import { Timestamp } from "firebase-admin/firestore";
 
