@@ -3,16 +3,17 @@
 import type { FormEvent } from "react";
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import AuthCard from "../../../components/auth/AuthCard";
 import AuthHeader from "../../../components/auth/AuthHeader";
 import AuthInput from "../../../components/auth/AuthInput";
 import Button from "../../../components/ui/Button";
-import { getAuthErrorMessage, resetPassword } from "../../../lib/auth";
 
 import Footer from "../../../components/layout/Footer";
 
 export default function ForgotPasswordPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -32,12 +33,28 @@ export default function ForgotPasswordPage() {
     try {
       setLoading(true);
 
-      await resetPassword(email.trim());
+      const normalizedEmail = email.trim().toLowerCase();
+      const response = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ email: normalizedEmail }),
+      });
+      const data = await response.json();
 
-      setSuccess("Reset link sent. Please check your inbox.");
-      setEmail("");
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to send reset code.");
+      }
+
+      setSuccess("Reset code sent. Please check your inbox.");
+      router.push(
+        `/auth/reset-password?email=${encodeURIComponent(normalizedEmail)}`
+      );
     } catch (error) {
-      setError(getAuthErrorMessage(error));
+      setError(
+        error instanceof Error ? error.message : "Unable to send reset code."
+      );
     } finally {
       setLoading(false);
     }
@@ -58,7 +75,7 @@ export default function ForgotPasswordPage() {
         <AuthCard>
           <AuthHeader
             title="Reset Password"
-            subtitle="Enter your email and we’ll send you a reset link."
+            subtitle="Enter your email and we will send you a reset code."
           />
 
           {error && (
@@ -96,7 +113,7 @@ export default function ForgotPasswordPage() {
             />
 
             <Button type="submit" disabled={loading}>
-              {loading ? "Sending link..." : "Send Reset Link"}
+              {loading ? "Sending code..." : "Send Reset Code"}
             </Button>
           </form>
 

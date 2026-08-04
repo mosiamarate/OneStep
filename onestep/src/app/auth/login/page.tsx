@@ -1,9 +1,10 @@
 "use client";
 
 import type { FormEvent } from "react";
+import { Suspense } from "react";
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import AuthCard from "../../../components/auth/AuthCard";
 import AuthHeader from "../../../components/auth/AuthHeader";
@@ -20,8 +21,14 @@ import {
 
 import Footer from "../../../components/layout/Footer";
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirectTo");
+  const safeRedirectTo =
+    redirectTo?.startsWith("/") && !redirectTo.startsWith("//")
+      ? redirectTo
+      : "/dashboard";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -57,7 +64,7 @@ export default function LoginPage() {
 
       await loginUser(email.trim(), password);
 
-      router.replace("/dashboard");
+      router.replace(safeRedirectTo);
     } catch (error) {
       setError(getAuthErrorMessage(error));
     } finally {
@@ -73,7 +80,7 @@ export default function LoginPage() {
 
       await loginWithGoogle();
 
-      router.replace("/dashboard");
+      router.replace(safeRedirectTo);
     } catch (error) {
       setError(getAuthErrorMessage(error));
     } finally {
@@ -194,5 +201,13 @@ export default function LoginPage() {
         <Footer />
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginPageContent />
+    </Suspense>
   );
 }

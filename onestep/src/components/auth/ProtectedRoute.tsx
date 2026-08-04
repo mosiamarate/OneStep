@@ -3,6 +3,7 @@
 import { ReactNode, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../hooks/useAuth";
+import { hasVerifiedEmailCookie } from "../../lib/authCookie";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -15,6 +16,11 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   useEffect(() => {
     if (!loading && !user) {
       router.replace("/auth/login");
+      return;
+    }
+
+    if (!loading && user && !hasVerifiedEmailCookie()) {
+      router.replace("/auth/verify-email");
     }
   }, [user, loading, router]);
 
@@ -26,7 +32,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
-  if (!user) {
+  if (!user || !hasVerifiedEmailCookie()) {
     return null;
   }
 

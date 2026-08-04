@@ -4,7 +4,7 @@ import "./globals.css";
 import PWARegister from "../components/layout/PWARegister";
 import UpdateAvailablePrompt from "../components/layout/updateAvailablePrompt";
 import { InstallPromptProvider } from "../components/pwa/InstallPromptProvider";
-import { Analytics } from "@vercel/analytics/next";
+import { Analytics } from "@vercel/analytics/react";
 
 export const metadata: Metadata = {
   title: {

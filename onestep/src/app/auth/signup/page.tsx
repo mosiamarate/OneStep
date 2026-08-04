@@ -66,11 +66,33 @@ export default function SignupPage() {
     try {
       setLoading("email");
 
-      await signupUser(fullName.trim(), email.trim(), password);
+      const userCredential = await signupUser(
+        fullName.trim(),
+        email.trim(),
+        password
+      );
+      const token = await userCredential.user.getIdToken();
 
-      router.replace("/dashboard");
+      const response = await fetch("/api/auth/send-verification", {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${token}`,
+          "content-type": "application/json",
+        },
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to send verification code.");
+      }
+
+      router.replace("/auth/verify-email?redirectTo=/dashboard");
     } catch (error) {
-      setError(getAuthErrorMessage(error));
+      setError(
+        error instanceof Error && !("code" in error)
+          ? error.message
+          : getAuthErrorMessage(error)
+      );
     } finally {
       setLoading(null);
     }

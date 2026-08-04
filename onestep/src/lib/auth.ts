@@ -2,23 +2,30 @@ import { FirebaseError } from "firebase/app";
 import {
   createUserWithEmailAndPassword,
   getAdditionalUserInfo,
-  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
   updateProfile,
 } from "firebase/auth";
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 
 import { auth, db, googleProvider } from "../lib/firebase";
-
-import {
-  verifyPasswordResetCode,
-  confirmPasswordReset,
-} from "firebase/auth";
+import { setAuthCookie } from "./authCookie";
 
 export async function loginUser(email: string, password: string) {
-  return signInWithEmailAndPassword(auth, email, password);
+  const userCredential = await signInWithEmailAndPassword(
+    auth,
+    email,
+    password
+  );
+
+  const profileSnap = await getDoc(doc(db, "users", userCredential.user.uid));
+  const isEmailVerified =
+    profileSnap.exists() && profileSnap.data().emailOtpVerified === true;
+
+  setAuthCookie(true, isEmailVerified);
+
+  return userCredential;
 }
 
 export async function signupUser(
@@ -41,9 +48,12 @@ export async function signupUser(
     fullName,
     email,
     provider: "password",
+    emailOtpVerified: false,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
+
+  setAuthCookie(true, false);
 
   return userCredential;
 }
@@ -59,12 +69,15 @@ export async function loginWithGoogle() {
       fullName: result.user.displayName || "",
       email: result.user.email || "",
       provider: "google",
+      emailOtpVerified: true,
       isNewUser: extraInfo?.isNewUser || false,
       updatedAt: serverTimestamp(),
       lastLoginAt: serverTimestamp(),
     },
     { merge: true }
   );
+
+  setAuthCookie(true, true);
 
   return result;
 }
@@ -81,6 +94,7 @@ export async function signupWithGoogle() {
       email: result.user.email || "",
       photoURL: result.user.photoURL || "",
       provider: "google",
+      emailOtpVerified: true,
       isNewUser: extraInfo?.isNewUser || false,
       updatedAt: serverTimestamp(),
       lastLoginAt: serverTimestamp(),
@@ -88,15 +102,14 @@ export async function signupWithGoogle() {
     { merge: true }
   );
 
+  setAuthCookie(true, true);
+
   return result;
 }
 
-export async function resetPassword(email: string) {
-  return sendPasswordResetEmail(auth, email);
-}
-
 export async function logoutUser() {
-  return signOut(auth);
+  await signOut(auth);
+  setAuthCookie(false);
 }
 
 export function getAuthErrorMessage(error: unknown) {
@@ -159,13 +172,3 @@ export function getAuthErrorMessage(error: unknown) {
   return "Something went wrong. Please try again.";
 }
 
-export async function verifyResetCode(oobCode: string) {
-  return verifyPasswordResetCode(auth, oobCode);
-}
-
-export async function confirmNewPassword(
-  oobCode: string,
-  newPassword: string
-) {
-  return confirmPasswordReset(auth, oobCode, newPassword);
-}

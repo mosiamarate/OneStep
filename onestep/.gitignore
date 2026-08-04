@@ -50,6 +50,7 @@ next-env.d.ts
 # Firebase private/admin files
 serviceAccountKey.json
 firebase-adminsdk*.json
+service-account.json
 
 # dependencies/build output
 node_modules
