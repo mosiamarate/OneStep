@@ -9,6 +9,11 @@ import {
   MAX_OTP_ATTEMPTS,
   OTP_PURPOSES,
 } from "../../../../lib/otp";
+import {
+  checkRateLimit,
+  createRateLimitResponse,
+  RATE_LIMIT_PRESETS,
+} from "../../../../lib/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -17,6 +22,11 @@ function isValidEmail(email: string) {
 }
 
 export async function POST(request: NextRequest) {
+  const rateLimit = checkRateLimit(request, RATE_LIMIT_PRESETS.STRICT);
+  if (!rateLimit.allowed) {
+    return createRateLimitResponse(rateLimit.retryAfterSeconds);
+  }
+
   const { email, newPassword, otp } = (await request.json()) as {
     email?: string;
     newPassword?: string;

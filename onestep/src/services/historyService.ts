@@ -95,14 +95,19 @@ export async function getFocusHistory(userId: string): Promise<HistoryItem[]> {
                 getStringValue(matchedAfterMood?.moodLabel) || null;
             
             const completed = session.completed === true;
+            const interrupted = session.interrupted === true || getStringValue(session.status) === "interrupted";
+
+            const duration =
+              getNumberValue(session.actualDuration) ||
+              getNumberValue(session.durationMinutes);
 
             const item: HistoryItem = {
                 id: document.id,
                 taskId,
                 taskTitle,
-                durationMinutes: getNumberValue(session.durationMinutes),
+                durationMinutes: duration,
                 completed,
-                status: completed ? "completed" : "unknown",
+                status: completed ? "completed" : interrupted ? "interrupted" : "unknown",
                 dateLabel: formatDateLabel(sessionDate),
                 timeLabel: formatTimeLabel(sessionDate),
                 afterMoodLabel,

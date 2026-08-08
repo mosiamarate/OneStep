@@ -24,14 +24,16 @@ The application is built as a Progressive Web App (PWA), allowing it to be insta
 
 ## Features
 
-### Authentication
+### Authentication & Account Management
 
 - Secure email and password authentication
 - Google Sign-In
 - Email verification using One-Time Passwords (OTP)
 - Password reset using secure OTP verification
-- Protected routes for authenticated users
-- Secure session handling
+- User Profile management (display name updates, profile photo, creation metadata)
+- GDPR-style data export generating a downloadable JSON file
+- Complete, secure account deletion with confirmation phrase verification (`DELETE MY ACCOUNT`)
+- Protected application routes and session management
 - Branded transactional emails powered by Resend
 
 ### Dashboard
@@ -116,6 +118,9 @@ The application is built as a Progressive Web App (PWA), allowing it to be insta
 | `/auth/forgot-password` | Request password reset |
 | `/auth/reset-password` | Reset password |
 | `/dashboard` | User dashboard |
+| `/settings/profile` | Profile management & info |
+| `/settings/account` | Account security & account deletion |
+| `/settings/data` | Data & Privacy GDPR data export |
 | `/mood` | Mood check-in |
 | `/task` | Task management |
 | `/focus` | Focus session |
@@ -161,14 +166,16 @@ Dashboard & History
 
 OneStep follows modern authentication and security practices, including:
 
-- Firebase Authentication
-- Secure email verification with OTP
-- OTP-based password reset
-- Protected application routes
-- Server-side authentication checks
-- Firebase Admin SDK for privileged operations
-- Firestore Security Rules
-- Environment-based secret management
+- Firebase Authentication identity & session handling
+- Secure email verification with OTP and OTP-based password reset
+- Session expiry enforced via logout tokens and route protection middleware
+- Rate limiting applied to authentication and OTP-related server routes
+- Protected application routes enforced via `proxy.ts` middleware & client components
+- Server-side ID token verification (`adminAuth.verifyIdToken()`) for all privileged endpoints
+- Firebase Admin SDK for server-side user data deletion and account management
+- GDPR data export containing user profile, tasks, mood history, and focus session records
+- Confirmation phrase safeguard (`DELETE MY ACCOUNT`) for destructive account deletion
+- Firestore Security Rules and server-only environment secret handling
 - Transactional email delivery using Resend
 
 ---

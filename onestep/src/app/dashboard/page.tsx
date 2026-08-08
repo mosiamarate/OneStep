@@ -120,28 +120,49 @@ export default function DashboardPage() {
               </span>
             </div>
 
-            <button
-              type="button"
-              onClick={handleLogout}
-              disabled={authLoading}
-              className="
-                rounded-xl
-                border
-                border-slate-700
-                px-4
-                py-2
-                text-sm
-                font-medium
-                text-slate-300
-                transition
-                hover:border-slate-500
-                hover:text-white
-                disabled:cursor-not-allowed
-                disabled:opacity-50
-              "
-            >
-              Logout
-            </button>
+            <div className="flex items-center gap-3">
+              <Link
+                href="/settings/profile"
+                className="
+                  rounded-xl
+                  border
+                  border-slate-700
+                  px-4
+                  py-2
+                  text-sm
+                  font-medium
+                  text-slate-300
+                  transition
+                  hover:border-slate-500
+                  hover:text-white
+                "
+              >
+                Settings
+              </Link>
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={authLoading}
+                className="
+                  rounded-xl
+                  border
+                  border-slate-700
+                  px-4
+                  py-2
+                  text-sm
+                  font-medium
+                  text-slate-300
+                  transition
+                  hover:border-slate-500
+                  hover:text-white
+                  disabled:cursor-not-allowed
+                  disabled:opacity-50
+                "
+              >
+                Logout
+              </button>
+            </div>
           </header>
 
           <div className="grid flex-1 gap-6 lg:grid-cols-[1.25fr_0.75fr]">

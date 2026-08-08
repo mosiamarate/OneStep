@@ -131,6 +131,12 @@ The API returns the same success response for unknown emails to avoid account en
 
 The client `ProtectedRoute` remains the Firebase-backed guard after the page loads.
 
+## Session Expiry and Rate Limiting
+
+OneStep now issues a short-lived logout token with each authenticated session. The logout token is stored in a secure cookie and expires after 24 hours, causing stale sessions to be cleared automatically when the user next interacts with the app.
+
+Authentication-related API routes now apply rate limiting using `src/lib/rateLimit.ts`, protecting OTP, sign-in, and verification flows from repeated abuse.
+
 ## Deployment Checklist
 
 - Configure Resend domain and set `EMAIL_FROM` to a verified sender.

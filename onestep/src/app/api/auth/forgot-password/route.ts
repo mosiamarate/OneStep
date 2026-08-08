@@ -3,6 +3,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDisplayName, sendOtpEmail } from "../../../../lib/authEmail";
 import { adminAuth } from "../../../../lib/firebase-admin";
 import { OTP_PURPOSES } from "../../../../lib/otp";
+import {
+  checkRateLimit,
+  createRateLimitResponse,
+  RATE_LIMIT_PRESETS,
+} from "../../../../lib/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -11,6 +16,11 @@ function isValidEmail(email: string) {
 }
 
 export async function POST(request: NextRequest) {
+  const rateLimit = checkRateLimit(request, RATE_LIMIT_PRESETS.STRICT);
+  if (!rateLimit.allowed) {
+    return createRateLimitResponse(rateLimit.retryAfterSeconds);
+  }
+
   const { email } = (await request.json()) as { email?: string };
   const normalizedEmail = email?.trim().toLowerCase();
 

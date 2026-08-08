@@ -1,10 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { onAuthStateChanged, User } from "firebase/auth";
+import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../lib/firebase";
-import { setAuthCookie } from "../lib/authCookie";
+import {
+  setAuthCookie,
+  clearAuthCookies,
+  isLogoutTokenExpired,
+} from "../lib/authCookie";
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -15,7 +19,20 @@ export function useAuth() {
       setUser(currentUser);
 
       if (!currentUser) {
-        setAuthCookie(false);
+        clearAuthCookies();
+        setLoading(false);
+        return;
+      }
+
+      if (isLogoutTokenExpired()) {
+        try {
+          await signOut(auth);
+        } catch (error) {
+          console.error("Error signing out expired session:", error);
+        }
+
+        clearAuthCookies();
+        setUser(null);
         setLoading(false);
         return;
       }

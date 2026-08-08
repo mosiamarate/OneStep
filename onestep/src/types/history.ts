@@ -4,7 +4,7 @@ export interface HistoryItem {
     taskTitle: string;
     durationMinutes: number;
     completed: boolean;
-    status: "completed" | "ended" | "unknown";
+    status: "completed" | "ended" | "interrupted" | "unknown";
     dateLabel: string;
     timeLabel: string;
     afterMoodLabel: string | null;

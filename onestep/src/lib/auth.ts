@@ -10,7 +10,11 @@ import {
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 
 import { auth, db, googleProvider } from "../lib/firebase";
-import { setAuthCookie } from "./authCookie";
+import {
+  setAuthCookie,
+  clearAuthCookies,
+  createLogoutToken,
+} from "./authCookie";
 
 export async function loginUser(email: string, password: string) {
   const userCredential = await signInWithEmailAndPassword(
@@ -22,8 +26,9 @@ export async function loginUser(email: string, password: string) {
   const profileSnap = await getDoc(doc(db, "users", userCredential.user.uid));
   const isEmailVerified =
     profileSnap.exists() && profileSnap.data().emailOtpVerified === true;
+  const logoutToken = createLogoutToken();
 
-  setAuthCookie(true, isEmailVerified);
+  setAuthCookie(true, isEmailVerified, logoutToken);
 
   return userCredential;
 }
@@ -53,7 +58,7 @@ export async function signupUser(
     updatedAt: serverTimestamp(),
   });
 
-  setAuthCookie(true, false);
+  setAuthCookie(true, false, createLogoutToken());
 
   return userCredential;
 }
@@ -77,7 +82,7 @@ export async function loginWithGoogle() {
     { merge: true }
   );
 
-  setAuthCookie(true, true);
+  setAuthCookie(true, true, createLogoutToken());
 
   return result;
 }
@@ -102,14 +107,14 @@ export async function signupWithGoogle() {
     { merge: true }
   );
 
-  setAuthCookie(true, true);
+  setAuthCookie(true, true, createLogoutToken());
 
   return result;
 }
 
 export async function logoutUser() {
   await signOut(auth);
-  setAuthCookie(false);
+  clearAuthCookies();
 }
 
 export function getAuthErrorMessage(error: unknown) {

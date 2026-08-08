@@ -209,9 +209,15 @@ export default function HistoryPage() {
                             {item.durationMinutes} min
                           </span>
 
-                          <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300">
-                            Completed
-                          </span>
+                          {item.completed ? (
+                            <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300">
+                              Completed
+                            </span>
+                          ) : (
+                            <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-300">
+                              Interrupted
+                            </span>
+                          )}
 
                           {item.afterMoodLabel && (
                             <span className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs font-medium text-slate-300">

@@ -109,6 +109,9 @@ export default function FocusClient() {
   const [savingCompletion, setSavingCompletion] = useState(false);
   const [endingSession, setEndingSession] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [showEndModal, setShowEndModal] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const wasRunningBeforeModalRef = useRef(false);
 
   const [afterMood, setAfterMood] = useState("");
   const [afterMoodNote, setAfterMoodNote] = useState("");
@@ -155,8 +158,14 @@ export default function FocusClient() {
         userId: user.uid,
         taskId: taskId || null,
         taskTitle,
+        duration: durationMinutes,
         durationMinutes,
+        actualDuration: durationMinutes,
+        startedAt: serverTimestamp(),
+        endedAt: serverTimestamp(),
         completed: true,
+        interrupted: false,
+        status: "completed",
         createdAt: serverTimestamp(),
         completedAt: serverTimestamp(),
       });
@@ -288,25 +297,74 @@ export default function FocusClient() {
     setAfterMoodNote("");
   };
 
-  const handleEndSession = async () => {
+  const handleRequestEndSession = () => {
+    wasRunningBeforeModalRef.current = running;
+    setRunning(false);
+    setShowEndModal(true);
+  };
+
+  const handleContinueSession = () => {
+    setShowEndModal(false);
+    if (wasRunningBeforeModalRef.current) {
+      setRunning(true);
+    }
+  };
+
+  const handleCompleteTaskAndEnd = async () => {
+    try {
+      setShowEndModal(false);
+      setRunning(false);
+      setCompleted(true);
+      await saveCompletedSession();
+    } catch (error) {
+      console.error("Error saving completed task session:", error);
+    }
+  };
+
+  const handleEndWithoutCompleting = async () => {
+    if (!user) return;
+
     try {
       setEndingSession(true);
-      closeMiniTimer();
+      setSaveError("");
+
+      const elapsedSeconds = totalSeconds - secondsRef.current;
+      const actualMinutes = Math.max(1, Math.round(elapsedSeconds / 60));
 
       if (taskId) {
         await updateDoc(doc(db, "tasks", taskId), {
-          status: "ended",
+          status: "interrupted",
           endedAt: serverTimestamp(),
           remainingSeconds: secondsRef.current,
           updatedAt: serverTimestamp(),
         });
       }
 
-      router.replace("/dashboard");
+      await addDoc(collection(db, "focusSessions"), {
+        userId: user.uid,
+        taskId: taskId || null,
+        taskTitle,
+        duration: durationMinutes,
+        durationMinutes,
+        actualDuration: actualMinutes,
+        startedAt: serverTimestamp(),
+        endedAt: serverTimestamp(),
+        completed: false,
+        interrupted: true,
+        status: "interrupted",
+        createdAt: serverTimestamp(),
+      });
+
+      closeMiniTimer();
+      setShowEndModal(false);
+      setToastMessage("Session ended. Your progress has been saved.");
+
+      setTimeout(() => {
+        router.replace("/dashboard");
+      }, 1200);
     } catch (error) {
-      console.error("Error ending session:", error);
-      router.replace("/dashboard");
-    } finally {
+      console.error("Error saving interrupted session:", error);
+      setSaveError("Failed to save session progress. Please try again.");
       setEndingSession(false);
     }
   };
@@ -501,7 +559,8 @@ export default function FocusClient() {
       pipWindow.document
         .getElementById("mini-end")
         ?.addEventListener("click", () => {
-          handleEndSession();
+          window.focus();
+          handleRequestEndSession();
         });
 
       pipWindow.addEventListener("pagehide", () => {
@@ -600,6 +659,12 @@ export default function FocusClient() {
                 </p>
               </div>
 
+              {toastMessage && (
+                <div className="mb-6 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
+                  {toastMessage}
+                </div>
+              )}
+
               {saveError && (
                 <div className="mb-6 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
                   {saveError}
@@ -674,7 +739,7 @@ export default function FocusClient() {
 
                   <button
                     type="button"
-                    onClick={handleEndSession}
+                    onClick={handleRequestEndSession}
                     disabled={authLoading || endingSession}
                     className="
                       rounded-xl
@@ -859,6 +924,123 @@ export default function FocusClient() {
             </div>
           </div>
         </section>
+
+        {showEndModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="end-session-title"
+          >
+            <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-6 text-left">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.25em] text-blue-400">
+                  Confirm Action
+                </p>
+                <h3
+                  id="end-session-title"
+                  className="mt-1 text-2xl font-bold text-white"
+                >
+                  End Focus Session?
+                </h3>
+              </div>
+
+              <div className="space-y-3 text-sm leading-relaxed text-slate-300">
+                <p>Are you sure you want to end this focus session?</p>
+                <p>
+                  If you’ve completed your task, we’ll save this session. If
+                  not, you can end it without marking it as completed.
+                </p>
+              </div>
+
+              {saveError && (
+                <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-400">
+                  {saveError}
+                </div>
+              )}
+
+              <div className="flex flex-col gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={handleContinueSession}
+                  disabled={endingSession || savingCompletion}
+                  className="
+                    w-full
+                    rounded-xl
+                    border
+                    border-slate-700
+                    px-5
+                    py-3
+                    text-sm
+                    font-medium
+                    text-slate-300
+                    transition
+                    hover:border-slate-500
+                    hover:text-white
+                    active:scale-[0.98]
+                    disabled:cursor-not-allowed
+                    disabled:opacity-50
+                  "
+                >
+                  Continue Session
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleCompleteTaskAndEnd}
+                  disabled={endingSession || savingCompletion}
+                  className="
+                    w-full
+                    rounded-xl
+                    bg-blue-500
+                    px-5
+                    py-3
+                    text-sm
+                    font-medium
+                    text-white
+                    transition
+                    hover:bg-blue-600
+                    active:scale-[0.98]
+                    disabled:cursor-not-allowed
+                    disabled:opacity-50
+                  "
+                >
+                  {endingSession || savingCompletion
+                    ? "Saving..."
+                    : "I Completed My Task"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleEndWithoutCompleting}
+                  disabled={endingSession || savingCompletion}
+                  className="
+                    w-full
+                    rounded-xl
+                    border
+                    border-slate-800
+                    bg-slate-950/60
+                    px-5
+                    py-3
+                    text-sm
+                    font-medium
+                    text-slate-400
+                    transition
+                    hover:border-slate-700
+                    hover:text-white
+                    active:scale-[0.98]
+                    disabled:cursor-not-allowed
+                    disabled:opacity-50
+                  "
+                >
+                  {endingSession || savingCompletion
+                    ? "Saving..."
+                    : "End Without Completing"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <Footer />
       </main>

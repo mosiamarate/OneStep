@@ -14,6 +14,11 @@ import {
   MAX_OTP_ATTEMPTS,
   OTP_PURPOSES,
 } from "../../../../lib/otp";
+import {
+  checkRateLimit,
+  createRateLimitResponse,
+  RATE_LIMIT_PRESETS,
+} from "../../../../lib/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -25,6 +30,11 @@ function getBearerToken(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const rateLimit = checkRateLimit(request, RATE_LIMIT_PRESETS.STRICT);
+  if (!rateLimit.allowed) {
+    return createRateLimitResponse(rateLimit.retryAfterSeconds);
+  }
+
   try {
     const token = getBearerToken(request);
 
@@ -110,6 +120,7 @@ export async function POST(request: NextRequest) {
         getDisplayName(user.displayName, user.email)
       );
     }
+    
 
     return NextResponse.json({ ok: true });
   } catch (error) {
@@ -118,4 +129,5 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
+  
 }

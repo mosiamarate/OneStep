@@ -3,6 +3,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDisplayName, getPublicOtpError, sendOtpEmail } from "../../../../lib/authEmail";
 import { adminAuth } from "../../../../lib/firebase-admin";
 import { OTP_PURPOSES } from "../../../../lib/otp";
+import {
+  checkRateLimit,
+  createRateLimitResponse,
+  RATE_LIMIT_PRESETS,
+} from "../../../../lib/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -14,6 +19,11 @@ function getBearerToken(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const rateLimit = checkRateLimit(request, RATE_LIMIT_PRESETS.AUTH);
+  if (!rateLimit.allowed) {
+    return createRateLimitResponse(rateLimit.retryAfterSeconds);
+  }
+
   try {
     const token = getBearerToken(request);
 
