@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { APP_VERSION } from "../../constants/appVersion";
 
+
 export default function UpdateAvailablePrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [latestVersion, setLatestVersion] = useState("");

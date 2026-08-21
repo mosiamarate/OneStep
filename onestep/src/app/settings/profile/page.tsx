@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { updateProfile } from "firebase/auth";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 
@@ -102,7 +101,6 @@ export default function ProfileSettingsPage() {
     }
   };
 
-  const photoURL = profile?.photoURL || user?.photoURL || "";
   const email = profile?.email || user?.email || "";
   const creationTime = user?.metadata?.creationTime || profile?.createdAt;
 
@@ -123,17 +121,8 @@ export default function ProfileSettingsPage() {
         <div className="space-y-6">
           {/* Profile Overview Card */}
           <div className="flex flex-col gap-6 rounded-2xl border border-slate-800 bg-slate-950/40 p-6 sm:flex-row sm:items-center">
-            <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-blue-600/20 text-2xl font-bold text-blue-400 border border-blue-500/30">
-              {photoURL ? (
-                <Image
-                  src={photoURL}
-                  alt={displayName || "Profile photo"}
-                  fill
-                  className="object-cover"
-                />
-              ) : (
-                (displayName || email || "U").charAt(0).toUpperCase()
-              )}
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-blue-600/20 text-3xl font-bold text-blue-400 border border-blue-500/30">
+              {(displayName || email || "U").charAt(0).toUpperCase()}
             </div>
 
             <div className="space-y-1">
