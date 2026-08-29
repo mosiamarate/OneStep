@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const AUTH_COOKIE = "onestep-authenticated";
-const VERIFIED_COOKIE = "onestep-email-verified";
-const LOGOUT_TOKEN_COOKIE = "onestep-auth-logout-token";
-const LOGOUT_TOKEN_EXPIRY_COOKIE = "onestep-auth-logout-token-expiry";
+import { adminAuth } from "./lib/firebase-admin";
+import { AUTH_SESSION_COOKIE } from "./lib/authSession";
+
 
 const protectedRoutes = [
   "/dashboard",
@@ -29,36 +28,31 @@ function isRouteMatch(pathname: string, routes: string[]) {
   );
 }
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
-  const isAuthenticated = request.cookies.get(AUTH_COOKIE)?.value === "true";
-  const isEmailVerified =
-    request.cookies.get(VERIFIED_COOKIE)?.value === "true";
-  const logoutToken = request.cookies.get(LOGOUT_TOKEN_COOKIE)?.value;
-  const logoutExpiry = Number(
-    request.cookies.get(LOGOUT_TOKEN_EXPIRY_COOKIE)?.value ?? "0"
-  );
+  const sessionCookie = request.cookies.get(AUTH_SESSION_COOKIE)?.value;
+  let session: { email_verified?: boolean } | null = null;
 
-  const isLogoutTokenValid =
-    Boolean(logoutToken) && Number.isFinite(logoutExpiry) && logoutExpiry > Date.now();
+  if (sessionCookie) {
+    try {
+      session = await adminAuth.verifySessionCookie(sessionCookie, true);
+    } catch {
+      if (!isRouteMatch(pathname, protectedRoutes)) {
+        return NextResponse.next();
+      }
 
-  const shouldExpireSession = isAuthenticated && !isLogoutTokenValid;
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = "/auth/login";
+      loginUrl.searchParams.set("redirectTo", `${pathname}${search}`);
 
-  if (shouldExpireSession) {
-    const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = "/auth/login";
-    loginUrl.searchParams.set("redirectTo", `${pathname}${search}`);
-
-    const response = NextResponse.redirect(loginUrl);
-    response.cookies.set(AUTH_COOKIE, "", { path: "/", maxAge: 0 });
-    response.cookies.set(VERIFIED_COOKIE, "", { path: "/", maxAge: 0 });
-    response.cookies.set(LOGOUT_TOKEN_COOKIE, "", { path: "/", maxAge: 0 });
-    response.cookies.set(LOGOUT_TOKEN_EXPIRY_COOKIE, "", {
-      path: "/",
-      maxAge: 0,
-    });
-    return response;
+      const response = NextResponse.redirect(loginUrl);
+      response.cookies.set(AUTH_SESSION_COOKIE, "", { path: "/", maxAge: 0 });
+      return response;
+    }
   }
+
+  const isAuthenticated = Boolean(session);
+  const isEmailVerified = session?.email_verified === true;
 
   if (!isAuthenticated && isRouteMatch(pathname, protectedRoutes)) {
     const loginUrl = request.nextUrl.clone();

@@ -11,6 +11,7 @@ import { logoutUser } from "../../lib/auth";
 import { useAuth } from "../../hooks/useAuth";
 import { useUserProfile } from "../../hooks/useUserProfile";
 import { getDashboardStats } from "../../services/dashboardService";
+import { updateFocusSession } from "../../services/focusSessionService";
 import {
   emptyDashboardStats,
   type DashboardStats,
@@ -38,6 +39,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats>(emptyDashboardStats);
   const [statsLoading, setStatsLoading] = useState(true);
   const [statsError, setStatsError] = useState("");
+  const [recoveryBusy, setRecoveryBusy] = useState(false);
 
   const displayName =
     getFirstName(profile?.fullName) ||
@@ -83,6 +85,44 @@ export default function DashboardPage() {
 
   const handleLogout = async () => {
     await logoutUser();
+  };
+
+  const unfinishedSession = stats.unfinishedSession;
+  const primaryHref = unfinishedSession
+    ? `/focus?sessionId=${unfinishedSession.id}`
+    : !stats.latestMood
+    ? "/mood"
+    : stats.activeTask
+    ? `/focus?taskId=${stats.activeTask.id}&task=${encodeURIComponent(stats.activeTask.title)}&time=${stats.activeTask.durationMinutes}`
+    : "/task";
+  const primaryLabel = unfinishedSession
+    ? "Resume Focus"
+    : !stats.latestMood
+    ? "Start Check-In"
+    : stats.activeTask
+    ? "Start Focus"
+    : "Choose a Task";
+
+  const handleCancelRecovery = async () => {
+    if (!user || !unfinishedSession || recoveryBusy) return;
+    if (!window.confirm("End this focus session? Your progress will remain in your history.")) return;
+
+    try {
+      setRecoveryBusy(true);
+      await updateFocusSession(
+        user.uid,
+        unfinishedSession.id,
+        "cancelled",
+        unfinishedSession.remainingTime,
+        unfinishedSession.focusedSeconds
+      );
+      setStats((current) => ({ ...current, unfinishedSession: null }));
+    } catch (error) {
+      console.error("Error cancelling focus session:", error);
+      setStatsError("We couldn’t end that focus session. Please try again.");
+    } finally {
+      setRecoveryBusy(false);
+    }
   };
 
   return (
@@ -194,9 +234,30 @@ export default function DashboardPage() {
                 gently.
               </p>
 
+              {unfinishedSession ? (
+                <div className="mt-8 rounded-2xl border border-blue-500/30 bg-blue-500/10 p-5">
+                  <p className="text-sm font-medium uppercase tracking-[0.2em] text-blue-300">
+                    Your focus session is still here
+                  </p>
+                  <h2 className="mt-2 break-words text-xl font-semibold text-white">
+                    {unfinishedSession.taskTitle}
+                  </h2>
+                  <p className="mt-2 text-sm text-slate-300">
+                    {Math.ceil(unfinishedSession.remainingTime / 60)} minutes remaining. You don’t have to start over.
+                  </p>
+                  <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                    <Link href={primaryHref} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-blue-500 px-5 py-3 font-medium text-white hover:bg-blue-600">
+                      Resume Focus
+                    </Link>
+                    <button type="button" onClick={handleCancelRecovery} disabled={recoveryBusy} className="min-h-11 rounded-xl border border-slate-700 px-5 py-3 font-medium text-slate-300 hover:border-slate-500 disabled:opacity-50">
+                      {recoveryBusy ? "Ending..." : "Cancel Session"}
+                    </button>
+                  </div>
+                </div>
+              ) : (
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link
-                  href="/mood"
+                  href={primaryHref}
                   className="
                     inline-flex
                     items-center
@@ -212,7 +273,7 @@ export default function DashboardPage() {
                     active:scale-[0.98]
                   "
                 >
-                  Start Check-In
+                  {primaryLabel}
                 </Link>
 
                 <Link
@@ -261,6 +322,17 @@ export default function DashboardPage() {
                   View History
                 </Link>
               </div>
+              )}
+
+              <div className="mt-8 rounded-2xl border border-blue-500/20 bg-blue-500/10 p-6">
+                <p className="text-sm font-medium uppercase tracking-[0.2em] text-blue-300">Your next step</p>
+                <h2 className="mt-2 break-words text-xl font-semibold text-white">
+                  {statsLoading ? "Loading..." : stats.activeTask?.title || "What would you like to focus on?"}
+                </h2>
+                <p className="mt-2 text-sm text-slate-400">
+                  {stats.activeTask ? `${stats.activeTask.durationMinutes}-minute focus session` : "Choose one clear task and give it your attention."}
+                </p>
+              </div>
 
               <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-5">
@@ -271,7 +343,7 @@ export default function DashboardPage() {
                       ? "..."
                       : stats.latestMood
                       ? `${stats.latestMood.emoji} ${stats.latestMood.label}`
-                      : "No check-in"}
+                      : "Not checked in yet"}
                   </p>
                 </div>
 
@@ -318,9 +390,9 @@ export default function DashboardPage() {
                 </h2>
 
                 <p className="mt-2 text-sm leading-relaxed text-slate-400">
-                  {stats.lastFocusTask
-                    ? "Good job showing up for one task today."
-                    : "Your next focus session will appear here after you complete it."}
+                    {stats.lastFocusTask
+                    ? `${stats.lastFocusMinutes} minutes focused${stats.latestMood ? ` · ${stats.latestMood.label}` : ""}`
+                    : "No focus session yet. Your completed sessions will appear here."}
                 </p>
               </div>
 

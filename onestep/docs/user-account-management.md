@@ -149,8 +149,8 @@ POST /api/account/delete  GET /api/account/export  Middleware (proxy.ts)
 1. **Zero Client-Side Trust**: Client-provided UIDs in body parameters or URL parameters are strictly ignored. All backend actions derive the targeted user from `adminAuth.verifyIdToken(token)`.
 2. **Privileged SDK Operations**: Firestore data purging and Firebase Auth account deletion are executed exclusively on the server using `firebase-admin`.
 3. **Route Protection**: The `src/proxy.ts` middleware guards all `/settings/*` routes, redirecting unauthenticated or unverified requests to `/auth/login` or `/auth/verify-email`.
-4. **Session Expiry**: Sessions are now limited by a logout token cookie that expires after 24 hours. Stale sessions are cleared automatically and users are redirected to `/auth/login` when the token is expired.
-5. **Rate Limiting**: Auth-related API routes now use server-side rate limiting to protect OTP verification, password reset, and verification email requests against repeated abuse.
+4. **Session Expiry**: Sessions use a Firebase Admin session cookie that is `HttpOnly`, `SameSite=Lax`, secure in production, and expires after 24 hours. The proxy verifies the cookie server-side and clears invalid or revoked sessions.
+5. **Rate Limiting**: Auth and sensitive account APIs use action-scoped server-side rate limiting to protect OTP verification, password reset, verification email, export, and deletion requests. Multi-instance production deployments should use a shared rate-limit store or hosting-provider control.
 6. **Confirmation Safeguard**: Deletion requires typing `DELETE MY ACCOUNT` in a modal dialog before sending the request.
 7. **Standard HTTP Error Responses**:
    - `401 Unauthorized`: Missing or invalid Firebase ID token.

@@ -14,6 +14,11 @@ import ProtectedRoute from "../../components/auth/ProtectedRoute";
 import Footer from "../../components/layout/Footer";
 import { useAuth } from "../../hooks/useAuth";
 import { db } from "../../lib/firebase";
+import {
+  getFocusSession,
+  updateFocusSession,
+} from "../../services/focusSessionService";
+import type { FocusSessionStatus } from "../../types/focusSession";
 
 interface WindowWithDocumentPictureInPicture extends Window {
   documentPictureInPicture?: {
@@ -80,14 +85,16 @@ export default function FocusClient() {
   const { user, loading: authLoading } = useAuth();
 
   const rawTime = searchParams.get("time");
-  const taskTitle = searchParams.get("task") || "Your focus task";
-  const taskId = searchParams.get("taskId");
+  const sessionId = searchParams.get("sessionId");
+  const queryTaskTitle = searchParams.get("task") || "Your focus task";
+  const queryTaskId = searchParams.get("taskId");
 
   const pipWindowRef = useRef<Window | null>(null);
   const completionSavedRef = useRef(false);
+  const completionSoundPlayedRef = useRef(false);
   const secondsRef = useRef(0);
 
-  const durationMinutes = useMemo(() => {
+  const requestedDurationMinutes = useMemo(() => {
     const parsedTime = Number(rawTime);
 
     if (!Number.isFinite(parsedTime) || parsedTime <= 0) {
@@ -101,9 +108,14 @@ export default function FocusClient() {
     return parsedTime;
   }, [rawTime]);
 
+  const [sessionDurationMinutes, setSessionDurationMinutes] = useState<number | null>(null);
+  const durationMinutes = sessionDurationMinutes ?? requestedDurationMinutes;
   const totalSeconds = durationMinutes * 60;
 
   const [seconds, setSeconds] = useState(totalSeconds);
+  const [taskTitle, setTaskTitle] = useState(queryTaskTitle);
+  const [taskId, setTaskId] = useState(queryTaskId);
+  const [sessionLoading, setSessionLoading] = useState(Boolean(sessionId));
   const [running, setRunning] = useState(true);
   const [completed, setCompleted] = useState(false);
   const [savingCompletion, setSavingCompletion] = useState(false);
@@ -116,6 +128,39 @@ export default function FocusClient() {
   const [afterMood, setAfterMood] = useState("");
   const [afterMoodNote, setAfterMoodNote] = useState("");
   const [savingReflection, setSavingReflection] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSession() {
+      if (!user || !sessionId) {
+        setSessionLoading(false);
+        return;
+      }
+
+      try {
+        const session = await getFocusSession(user.uid, sessionId);
+        if (!session || cancelled) return;
+
+        setTaskTitle(session.taskTitle);
+        setTaskId(session.taskId);
+        setSessionDurationMinutes(session.originalDuration);
+        setSeconds(session.remainingTime);
+        setRunning(session.status === "active");
+        setCompleted(session.status === "completed");
+      } catch (error) {
+        console.error("Error loading focus session:", error);
+        if (!cancelled) setSaveError("We couldn’t restore this focus session.");
+      } finally {
+        if (!cancelled) setSessionLoading(false);
+      }
+    }
+
+    loadSession();
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId, user]);
 
   useEffect(() => {
     secondsRef.current = seconds;
@@ -154,21 +199,15 @@ export default function FocusClient() {
         });
       }
 
-      await addDoc(collection(db, "focusSessions"), {
-        userId: user.uid,
-        taskId: taskId || null,
-        taskTitle,
-        duration: durationMinutes,
-        durationMinutes,
-        actualDuration: durationMinutes,
-        startedAt: serverTimestamp(),
-        endedAt: serverTimestamp(),
-        completed: true,
-        interrupted: false,
-        status: "completed",
-        createdAt: serverTimestamp(),
-        completedAt: serverTimestamp(),
-      });
+      if (sessionId) {
+        await updateFocusSession(
+          user.uid,
+          sessionId,
+          "completed",
+          0,
+          totalSeconds
+        );
+      }
     } catch (error) {
       console.error("Error saving completed session:", error);
       completionSavedRef.current = false;
@@ -178,7 +217,7 @@ export default function FocusClient() {
     } finally {
       setSavingCompletion(false);
     }
-  }, [durationMinutes, taskId, taskTitle, user]);
+  }, [sessionId, taskId, totalSeconds, user]);
 
   const saveAfterSessionMood = useCallback(async () => {
     if (!user) return;
@@ -220,7 +259,7 @@ export default function FocusClient() {
   }, [afterMood, afterMoodNote, durationMinutes, taskId, taskTitle, user]);
 
   useEffect(() => {
-    if (!running || completed) return;
+    if (!running || completed || sessionLoading) return;
 
     const timer = setInterval(() => {
       setSeconds((previousSeconds) => {
@@ -233,7 +272,23 @@ export default function FocusClient() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [running, completed]);
+  }, [running, completed, sessionLoading]);
+
+  useEffect(() => {
+    if (!running || completed || sessionLoading || !user || !sessionId) return;
+
+    const checkpoint = window.setInterval(() => {
+      void updateFocusSession(
+        user.uid,
+        sessionId,
+        "active",
+        secondsRef.current,
+        totalSeconds - secondsRef.current
+      ).catch((error) => console.error("Error checkpointing focus session:", error));
+    }, 15000);
+
+    return () => window.clearInterval(checkpoint);
+  }, [completed, running, sessionId, sessionLoading, totalSeconds, user]);
 
   useEffect(() => {
     if (seconds === 0 && !completed) {
@@ -242,6 +297,19 @@ export default function FocusClient() {
       saveCompletedSession();
     }
   }, [seconds, completed, saveCompletedSession]);
+
+  useEffect(() => {
+    if (!completed || completionSoundPlayedRef.current) return;
+    completionSoundPlayedRef.current = true;
+
+    if (window.localStorage.getItem("onestep-completion-sound") === "off") {
+      return;
+    }
+
+    const audio = new Audio("/notification%20sounds/onestep-bell.mp3");
+    audio.volume = 0.35;
+    void audio.play().catch(() => undefined);
+  }, [completed]);
 
   useEffect(() => {
     const pipWindow = pipWindowRef.current;
@@ -283,8 +351,25 @@ export default function FocusClient() {
     };
   }, []);
 
-  const handlePauseResume = () => {
-    setRunning((current) => !current);
+  const handlePauseResume = async () => {
+    if (!user || !sessionId || completed || endingSession) return;
+
+    const nextRunning = !running;
+    const nextStatus: FocusSessionStatus = nextRunning ? "active" : "paused";
+
+    try {
+      await updateFocusSession(
+        user.uid,
+        sessionId,
+        nextStatus,
+        secondsRef.current,
+        totalSeconds - secondsRef.current
+      );
+      setRunning(nextRunning);
+    } catch (error) {
+      console.error("Error updating focus session:", error);
+      setSaveError("We couldn’t update this focus session. Please try again.");
+    }
   };
 
   const handleReset = () => {
@@ -329,31 +414,24 @@ export default function FocusClient() {
       setSaveError("");
 
       const elapsedSeconds = totalSeconds - secondsRef.current;
-      const actualMinutes = Math.max(1, Math.round(elapsedSeconds / 60));
-
       if (taskId) {
         await updateDoc(doc(db, "tasks", taskId), {
-          status: "interrupted",
+          status: "cancelled",
           endedAt: serverTimestamp(),
           remainingSeconds: secondsRef.current,
           updatedAt: serverTimestamp(),
         });
       }
 
-      await addDoc(collection(db, "focusSessions"), {
-        userId: user.uid,
-        taskId: taskId || null,
-        taskTitle,
-        duration: durationMinutes,
-        durationMinutes,
-        actualDuration: actualMinutes,
-        startedAt: serverTimestamp(),
-        endedAt: serverTimestamp(),
-        completed: false,
-        interrupted: true,
-        status: "interrupted",
-        createdAt: serverTimestamp(),
-      });
+      if (sessionId) {
+        await updateFocusSession(
+          user.uid,
+          sessionId,
+          "cancelled",
+          secondsRef.current,
+          elapsedSeconds
+        );
+      }
 
       closeMiniTimer();
       setShowEndModal(false);

@@ -42,8 +42,12 @@ export function isOtpMatch(
   expectedHash: string
 ) {
   const otpHash = hashOtp(uid, otp, purpose);
+  const expectedHashBuffer = Buffer.from(expectedHash, "hex");
+  const otpHashBuffer = Buffer.from(otpHash, "hex");
 
-  return timingSafeEqual(Buffer.from(otpHash), Buffer.from(expectedHash));
+  if (otpHashBuffer.length !== expectedHashBuffer.length) return false;
+
+  return timingSafeEqual(otpHashBuffer, expectedHashBuffer);
 }
 
 export function getOtpDocId(uid: string, purpose: OtpPurpose) {

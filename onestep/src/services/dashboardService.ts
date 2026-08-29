@@ -2,6 +2,11 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 
 import { db } from "../lib/firebase";
 import type { DashboardStats } from "../types/dashboard";
+import {
+  findUnfinishedFocusSession,
+  reconcileFocusSession,
+} from "./focusSessionService";
+import type { FocusSession } from "../types/focusSession";
 
 type FirestoreTimestampLike = {
   toDate: () => Date;
@@ -52,20 +57,25 @@ function getNumberValue(value: unknown) {
 }
 
 export async function getDashboardStats(userId: string): Promise<DashboardStats> {
-  const [moodsSnapshot, tasksSnapshot, sessionsSnapshot] = await Promise.all([
+  const [moodsSnapshot, tasksSnapshot, sessionsSnapshot, foundUnfinishedSession] = await Promise.all([
     getDocs(query(collection(db, "moods"), where("userId", "==", userId))),
     getDocs(query(collection(db, "tasks"), where("userId", "==", userId))),
     getDocs(
       query(collection(db, "focusSessions"), where("userId", "==", userId))
     ),
+    findUnfinishedFocusSession(userId),
   ]);
+  const unfinishedSession =
+    foundUnfinishedSession?.status === "active"
+      ? await reconcileFocusSession(userId, foundUnfinishedSession)
+      : foundUnfinishedSession;
 
   const moods = moodsSnapshot.docs.map((document) => {
     return document.data() as FirestoreData;
   });
 
   const tasks = tasksSnapshot.docs.map((document) => {
-    return document.data() as FirestoreData;
+    return { ...document.data(), id: document.id } as FirestoreData;
   });
 
   const sessions = sessionsSnapshot.docs.map((document) => {
@@ -124,9 +134,10 @@ export async function getDashboardStats(userId: string): Promise<DashboardStats>
   let focusMinutesToday = 0;
   let lastFocusTask: string | null = null;
   let latestSessionTime = 0;
+  let lastFocusMinutes = 0;
 
   sessions.forEach((session) => {
-    const completed = session.completed === true;
+    const completed = session.completed === true || getStringValue(session.status) === "completed";
 
     const sessionDate =
       getDateValue(session.completedAt) || getDateValue(session.createdAt);
@@ -136,11 +147,12 @@ export async function getDashboardStats(userId: string): Promise<DashboardStats>
     }
 
     focusSessionsToday += 1;
-    focusMinutesToday += getNumberValue(session.durationMinutes);
+    focusMinutesToday += getNumberValue(session.focusedSeconds) / 60 || getNumberValue(session.actualDuration) || getNumberValue(session.durationMinutes);
 
     if (sessionDate.getTime() > latestSessionTime) {
       latestSessionTime = sessionDate.getTime();
       lastFocusTask = getStringValue(session.taskTitle) || null;
+      lastFocusMinutes = Math.round(getNumberValue(session.focusedSeconds) / 60 || getNumberValue(session.actualDuration) || getNumberValue(session.durationMinutes));
     }
   });
 
@@ -150,5 +162,16 @@ export async function getDashboardStats(userId: string): Promise<DashboardStats>
     focusSessionsToday,
     focusMinutesToday,
     lastFocusTask,
+    lastFocusMinutes,
+    lastFocusAt: latestSessionTime ? new Date(latestSessionTime) : null,
+    activeTask:
+      tasks
+        .filter((task) => getStringValue(task.status) === "active" && task.completed !== true)
+        .map((task) => ({
+          id: getStringValue(task.id),
+          title: getStringValue(task.title) || "Your focus task",
+          durationMinutes: getNumberValue(task.durationMinutes) || 25,
+        }))[0] || null,
+    unfinishedSession: unfinishedSession as FocusSession | null,
   };
 }

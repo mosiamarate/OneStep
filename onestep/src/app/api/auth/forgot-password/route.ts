@@ -16,7 +16,10 @@ function isValidEmail(email: string) {
 }
 
 export async function POST(request: NextRequest) {
-  const rateLimit = checkRateLimit(request, RATE_LIMIT_PRESETS.STRICT);
+  const rateLimit = checkRateLimit(request, {
+    ...RATE_LIMIT_PRESETS.STRICT,
+    scope: "forgot-password",
+  });
   if (!rateLimit.allowed) {
     return createRateLimitResponse(rateLimit.retryAfterSeconds);
   }

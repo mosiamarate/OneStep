@@ -73,7 +73,17 @@ function VerifyEmailContent() {
     setVerifying(true);
 
     try {
+      if (!user) throw new Error("You need to sign in again.");
+
       await callOtpApi("/api/auth/verify-email", { otp });
+      const refreshedToken = await user.getIdToken(true);
+      const sessionResponse = await fetch("/api/auth/session", {
+        method: "POST",
+        headers: { authorization: `Bearer ${refreshedToken}` },
+      });
+      if (!sessionResponse.ok) {
+        throw new Error("Unable to refresh your secure session.");
+      }
       setAuthCookie(true, true);
       router.replace(safeRedirectTo);
     } catch (error) {

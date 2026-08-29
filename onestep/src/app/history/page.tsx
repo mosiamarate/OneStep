@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -16,6 +16,7 @@ export default function HistoryPage() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [historyError, setHistoryError] = useState("");
+  const [filter, setFilter] = useState<"all" | "completed" | "interrupted" | "cancelled">("all");
 
   useEffect(() => {
     let cancelled = false;
@@ -51,6 +52,17 @@ export default function HistoryPage() {
       cancelled = true;
     };
   }, [user]);
+
+  const visibleHistory = useMemo(
+    () => filter === "all" ? history : history.filter((item) => item.status === filter),
+    [filter, history]
+  );
+  const summary = useMemo(() => ({
+    totalMinutes: Math.round(history.reduce((total, item) => total + item.focusedSeconds, 0) / 60),
+    completed: history.filter((item) => item.status === "completed").length,
+    interrupted: history.filter((item) => item.status === "interrupted").length,
+    cancelled: history.filter((item) => item.status === "cancelled").length,
+  }), [history]);
 
   return (
     <ProtectedRoute>
@@ -136,6 +148,23 @@ export default function HistoryPage() {
               that every small step still counts.
             </p>
 
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[["Focus time", `${summary.totalMinutes} min`], ["Completed", summary.completed], ["Interrupted", summary.interrupted], ["Ended early", summary.cancelled]].map(([label, value]) => (
+                <div key={String(label)} className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                  <p className="text-xs uppercase tracking-[0.15em] text-slate-500">{label}</p>
+                  <p className="mt-2 text-xl font-semibold text-white">{value}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-2" role="tablist" aria-label="Filter focus history">
+              {(["all", "completed", "interrupted", "cancelled"] as const).map((value) => (
+                <button key={value} type="button" role="tab" aria-selected={filter === value} onClick={() => setFilter(value)} className={`rounded-xl px-4 py-2.5 text-sm font-medium transition ${filter === value ? "bg-blue-500 text-white" : "border border-slate-800 bg-slate-950/40 text-slate-400 hover:border-slate-700 hover:text-white"}`}>
+                  {value === "all" ? "All" : value === "cancelled" ? "Cancelled" : value.charAt(0).toUpperCase() + value.slice(1)}
+                </button>
+              ))}
+            </div>
+
             {historyError && (
               <div className="mt-6 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
                 {historyError}
@@ -146,14 +175,14 @@ export default function HistoryPage() {
               <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-950/40 p-6 text-center">
                 <p className="text-slate-400">Loading your history...</p>
               </div>
-            ) : history.length === 0 ? (
+            ) : visibleHistory.length === 0 ? (
               <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-950/40 p-6 text-center">
                 <h2 className="text-xl font-semibold text-white">
-                  No focus sessions yet.
+                  {history.length === 0 ? "No focus sessions yet." : `No ${filter} sessions found.`}
                 </h2>
 
                 <p className="mt-2 text-sm leading-relaxed text-slate-400">
-                  Complete your first focus session and it will appear here.
+                  {history.length === 0 ? "When you complete your first focus session, your progress will appear here." : "Try another filter to see more of your progress."}
                 </p>
 
                 <Link
@@ -181,7 +210,7 @@ export default function HistoryPage() {
               </div>
             ) : (
               <div className="mt-8 space-y-4">
-                {history.map((item) => (
+                {visibleHistory.map((item) => (
                   <article
                     key={item.id}
                     className="
@@ -209,13 +238,17 @@ export default function HistoryPage() {
                             {item.durationMinutes} min
                           </span>
 
-                          {item.completed ? (
+                          {item.status === "completed" ? (
                             <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300">
                               Completed
                             </span>
-                          ) : (
+                          ) : item.status === "interrupted" ? (
                             <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-300">
                               Interrupted
+                            </span>
+                          ) : (
+                            <span className="rounded-full border border-slate-600 bg-slate-800/70 px-3 py-1 text-xs font-medium text-slate-300">
+                              Ended early
                             </span>
                           )}
 
@@ -225,6 +258,13 @@ export default function HistoryPage() {
                             </span>
                           )}
                         </div>
+
+                        <p className="mt-4 text-sm text-slate-300">
+                          {item.durationMinutes} minutes focused
+                          {item.status === "interrupted" && ` · ${Math.ceil(item.remainingSeconds / 60)} minutes remaining`}
+                        </p>
+                        {item.interruptionCount > 0 && <p className="mt-1 text-xs text-slate-500">Interruptions: {item.interruptionCount}</p>}
+                        {item.reflection && <p className="mt-3 border-l-2 border-slate-700 pl-3 text-sm italic text-slate-400">{item.reflection}</p>}
                       </div>
 
                       <div className="rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-center">

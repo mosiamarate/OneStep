@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminAuth, adminDb } from "../../../../lib/firebase-admin";
+import { clearAuthSession } from "../../../../lib/authSession";
+import {
+  checkRateLimit,
+  createRateLimitResponse,
+  RATE_LIMIT_PRESETS,
+} from "../../../../lib/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -26,6 +32,14 @@ async function deleteQueryBatch(query: FirebaseFirestore.Query) {
 }
 
 export async function POST(request: NextRequest) {
+  const rateLimit = checkRateLimit(request, {
+    ...RATE_LIMIT_PRESETS.STRICT,
+    scope: "account-delete",
+  });
+  if (!rateLimit.allowed) {
+    return createRateLimitResponse(rateLimit.retryAfterSeconds);
+  }
+
   try {
     const token = getBearerToken(request);
 
@@ -81,6 +95,7 @@ export async function POST(request: NextRequest) {
 
     // 2. Delete Firebase Authentication Account
     await adminAuth.deleteUser(uid);
+    await clearAuthSession();
 
     return NextResponse.json(
       { ok: true, message: "Account and associated data deleted successfully." },

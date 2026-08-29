@@ -30,7 +30,10 @@ function getBearerToken(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const rateLimit = checkRateLimit(request, RATE_LIMIT_PRESETS.STRICT);
+  const rateLimit = checkRateLimit(request, {
+    ...RATE_LIMIT_PRESETS.STRICT,
+    scope: "verify-email",
+  });
   if (!rateLimit.allowed) {
     return createRateLimitResponse(rateLimit.retryAfterSeconds);
   }
@@ -57,45 +60,63 @@ export async function POST(request: NextRequest) {
     const otpRef = adminDb
       .collection("emailOtps")
       .doc(getOtpDocId(user.uid, purpose));
-    const otpSnap = await otpRef.get();
+    const verification = await adminDb.runTransaction(async (transaction) => {
+      const otpSnap = await transaction.get(otpRef);
+      if (!otpSnap.exists) return "missing" as const;
 
-    if (!otpSnap.exists) {
+      const otpData = otpSnap.data();
+      const attempts = Number(otpData?.attempts || 0);
+      const expiresAt = otpData?.expiresAt as Timestamp | undefined;
+      const otpHash = otpData?.otpHash as string | undefined;
+      const used = otpData?.used === true;
+
+      if (used || isOtpExpired(expiresAt)) {
+        transaction.delete(otpRef);
+        return "expired" as const;
+      }
+
+      if (attempts >= MAX_OTP_ATTEMPTS || !otpHash) {
+        transaction.delete(otpRef);
+        return "locked" as const;
+      }
+
+      if (!isOtpMatch(user.uid, otp, purpose, otpHash)) {
+        transaction.update(otpRef, {
+          attempts: FieldValue.increment(1),
+          lastAttemptAt: FieldValue.serverTimestamp(),
+        });
+        return "invalid" as const;
+      }
+
+      transaction.update(otpRef, {
+        used: true,
+        usedAt: FieldValue.serverTimestamp(),
+      });
+      return "valid" as const;
+    });
+
+    if (verification === "missing") {
       return NextResponse.json(
         { error: "Request a new verification code." },
         { status: 400 }
       );
     }
 
-    const otpData = otpSnap.data();
-    const attempts = Number(otpData?.attempts || 0);
-    const expiresAt = otpData?.expiresAt as Timestamp | undefined;
-    const otpHash = otpData?.otpHash as string | undefined;
-    const used = otpData?.used === true;
-
-    if (used || isOtpExpired(expiresAt)) {
-      await otpRef.delete();
-
+    if (verification === "expired") {
       return NextResponse.json(
         { error: "This code has expired. Request a new one." },
         { status: 400 }
       );
     }
 
-    if (attempts >= MAX_OTP_ATTEMPTS || !otpHash) {
-      await otpRef.delete();
-
+    if (verification === "locked") {
       return NextResponse.json(
         { error: "Too many attempts. Request a new code." },
         { status: 429 }
       );
     }
 
-    if (!isOtpMatch(user.uid, otp, purpose, otpHash)) {
-      await otpRef.update({
-        attempts: FieldValue.increment(1),
-        lastAttemptAt: FieldValue.serverTimestamp(),
-      });
-
+    if (verification === "invalid") {
       return NextResponse.json(
         { error: "That code is not correct." },
         { status: 400 }

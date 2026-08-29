@@ -10,6 +10,7 @@ import TimeSelector from "../../components/task/TimeSelector";
 
 import { db } from "../../lib/firebase";
 import { useAuth } from "../../hooks/useAuth";
+import { createFocusSession } from "../../services/focusSessionService";
 
 import { FirebaseError } from "firebase/app";
 
@@ -61,11 +62,14 @@ export default function TaskPage() {
         createdAt: serverTimestamp(),
       });
 
-      router.push(
-        `/focus?time=${selectedTime}&task=${encodeURIComponent(
-          trimmedTask
-        )}&taskId=${taskRef.id}`
-      );
+      const session = await createFocusSession({
+        userId: user.uid,
+        taskId: taskRef.id,
+        taskTitle: trimmedTask,
+        durationMinutes: selectedTime,
+      });
+
+      router.push(`/focus?sessionId=${session.id}`);
     } catch (error) {
       console.error("Error creating task:", error);
 

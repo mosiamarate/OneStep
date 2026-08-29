@@ -8,6 +8,7 @@ interface RateLimitOptions {
   maxRequests: number;
   windowMs: number;
   identifierKey?: string;
+  scope?: string;
 }
 
 const rateLimitMap = new Map<string, RateLimitRecord>();
@@ -32,19 +33,20 @@ if (typeof setInterval !== "undefined") {
 function getClientIdentifier(request: NextRequest, customKey?: string): string {
   if (customKey) return customKey;
 
-  const forwarded = request.headers.get("x-forwarded-for");
-  const ip = forwarded ? forwarded.split(",")[0].trim() : "127.0.0.1";
-  const userAgent = request.headers.get("user-agent") || "unknown";
+  const ip =
+    request.headers.get("x-real-ip") ||
+    request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+    "unknown";
 
-  return `${ip}:${userAgent}`;
+  return ip;
 }
 
 export function checkRateLimit(
   request: NextRequest,
   options: RateLimitOptions
 ): { allowed: boolean; remaining: number; retryAfterSeconds: number } {
-  const { maxRequests, windowMs, identifierKey } = options;
-  const key = getClientIdentifier(request, identifierKey);
+  const { maxRequests, windowMs, identifierKey, scope } = options;
+  const key = `${scope || "global"}:${getClientIdentifier(request, identifierKey)}`;
   const now = Date.now();
 
   const record = rateLimitMap.get(key) || { timestamps: [] };

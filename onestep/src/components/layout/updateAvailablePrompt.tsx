@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { APP_VERSION } from "../../constants/appVersion";
+import { RefreshCw } from "lucide-react";
 
 
 export default function UpdateAvailablePrompt() {
@@ -86,22 +87,20 @@ export default function UpdateAvailablePrompt() {
           shadow-2xl
         "
       >
-        <div className="mb-5 flex items-start gap-4">
-          <div
-            className="
-              flex
-              h-11
-              w-11
-              shrink-0
-              items-center
-              justify-center
-              rounded-2xl
-              bg-blue-500/10
-              text-xl
-            "
-          >
-            ✨
-          </div>
+        <RefreshCw
+          aria-hidden="true"
+          className="h-8 w-8 text-blue-500"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={1.5}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M16.023 9.348h4.992v-4.992m-1.48 1.48A9 9 0 1 0 18.75 15.75"
+          />
+        </RefreshCw>
 
           <div>
             <p className="text-sm font-semibold text-blue-300">
@@ -112,7 +111,6 @@ export default function UpdateAvailablePrompt() {
               OneStep has been updated.
             </h2>
           </div>
-        </div>
 
         <p className="text-sm leading-relaxed text-slate-400">
           A new version with recent changes is available. Refresh to get the

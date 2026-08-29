@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminAuth, adminDb } from "../../../../lib/firebase-admin";
+import {
+  checkRateLimit,
+  createRateLimitResponse,
+  RATE_LIMIT_PRESETS,
+} from "../../../../lib/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -40,6 +45,14 @@ function serializeValue(value: unknown): unknown {
 }
 
 export async function GET(request: NextRequest) {
+  const rateLimit = checkRateLimit(request, {
+    ...RATE_LIMIT_PRESETS.STRICT,
+    scope: "account-export",
+  });
+  if (!rateLimit.allowed) {
+    return createRateLimitResponse(rateLimit.retryAfterSeconds);
+  }
+
   try {
     const token = getBearerToken(request);
 

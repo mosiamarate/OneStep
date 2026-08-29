@@ -3,10 +3,15 @@ export interface HistoryItem {
     taskId: string | null;
     taskTitle: string;
     durationMinutes: number;
+    originalDuration: number;
+    focusedSeconds: number;
+    remainingSeconds: number;
+    interruptionCount: number;
     completed: boolean;
-    status: "completed" | "ended" | "interrupted" | "unknown";
+    status: "completed" | "interrupted" | "cancelled" | "unknown";
     dateLabel: string;
     timeLabel: string;
     afterMoodLabel: string | null;
     afterMoodEmoji: string | null;
+    reflection: string | null;
 }

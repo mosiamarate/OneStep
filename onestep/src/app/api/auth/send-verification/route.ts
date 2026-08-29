@@ -19,7 +19,10 @@ function getBearerToken(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const rateLimit = checkRateLimit(request, RATE_LIMIT_PRESETS.AUTH);
+  const rateLimit = checkRateLimit(request, {
+    ...RATE_LIMIT_PRESETS.AUTH,
+    scope: "send-verification",
+  });
   if (!rateLimit.allowed) {
     return createRateLimitResponse(rateLimit.retryAfterSeconds);
   }

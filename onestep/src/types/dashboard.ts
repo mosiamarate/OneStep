@@ -1,3 +1,5 @@
+import type { FocusSession } from "./focusSession";
+
 export interface LatestMoodSummary {
     label: string;
     emoji: string;
@@ -10,6 +12,10 @@ export interface DashboardStats {
     focusSessionsToday: number;
     focusMinutesToday: number;
     lastFocusTask: string | null;
+    lastFocusMinutes: number;
+    lastFocusAt: unknown;
+    activeTask: { id: string; title: string; durationMinutes: number } | null;
+    unfinishedSession: FocusSession | null;
 }
 
 export const emptyDashboardStats: DashboardStats = {
@@ -18,4 +24,8 @@ export const emptyDashboardStats: DashboardStats = {
     focusSessionsToday: 0,
     focusMinutesToday: 0,
     lastFocusTask: null,
+    lastFocusMinutes: 0,
+    lastFocusAt: null,
+    activeTask: null,
+    unfinishedSession: null,
 };

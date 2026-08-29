@@ -13,8 +13,19 @@ import { auth, db, googleProvider } from "../lib/firebase";
 import {
   setAuthCookie,
   clearAuthCookies,
-  createLogoutToken,
 } from "./authCookie";
+
+async function establishAuthSession(user: { getIdToken: () => Promise<string> }) {
+  const token = await user.getIdToken();
+  const response = await fetch("/api/auth/session", {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to create a secure session.");
+  }
+}
 
 export async function loginUser(email: string, password: string) {
   const userCredential = await signInWithEmailAndPassword(
@@ -26,9 +37,8 @@ export async function loginUser(email: string, password: string) {
   const profileSnap = await getDoc(doc(db, "users", userCredential.user.uid));
   const isEmailVerified =
     profileSnap.exists() && profileSnap.data().emailOtpVerified === true;
-  const logoutToken = createLogoutToken();
-
-  setAuthCookie(true, isEmailVerified, logoutToken);
+  await establishAuthSession(userCredential.user);
+  setAuthCookie(true, isEmailVerified);
 
   return userCredential;
 }
@@ -44,21 +54,25 @@ export async function signupUser(
     password
   );
 
-  await updateProfile(userCredential.user, {
-    displayName: fullName,
-  });
+  try {
+    await updateProfile(userCredential.user, { displayName: fullName });
 
-  await setDoc(doc(db, "users", userCredential.user.uid), {
-    uid: userCredential.user.uid,
-    fullName,
-    email,
-    provider: "password",
-    emailOtpVerified: false,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  });
+    await setDoc(doc(db, "users", userCredential.user.uid), {
+      uid: userCredential.user.uid,
+      fullName,
+      email,
+      provider: "password",
+      emailOtpVerified: false,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    await userCredential.user.delete().catch(() => undefined);
+    throw error;
+  }
 
-  setAuthCookie(true, false, createLogoutToken());
+  await establishAuthSession(userCredential.user);
+  setAuthCookie(true, false);
 
   return userCredential;
 }
@@ -82,7 +96,8 @@ export async function loginWithGoogle() {
     { merge: true }
   );
 
-  setAuthCookie(true, true, createLogoutToken());
+  await establishAuthSession(result.user);
+  setAuthCookie(true, true);
 
   return result;
 }
@@ -107,12 +122,14 @@ export async function signupWithGoogle() {
     { merge: true }
   );
 
-  setAuthCookie(true, true, createLogoutToken());
+  await establishAuthSession(result.user);
+  setAuthCookie(true, true);
 
   return result;
 }
 
 export async function logoutUser() {
+  await fetch("/api/auth/session", { method: "DELETE" }).catch(() => undefined);
   await signOut(auth);
   clearAuthCookies();
 }

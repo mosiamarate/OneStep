@@ -39,6 +39,7 @@ export default function ProfileSettingsPage() {
 
   const [displayName, setDisplayName] = useState("");
   const [saving, setSaving] = useState(false);
+  const [completionSoundEnabled, setCompletionSoundEnabled] = useState(true);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
@@ -48,6 +49,20 @@ export default function ProfileSettingsPage() {
       setDisplayName(user.displayName);
     }
   }, [profile, user]);
+
+  useEffect(() => {
+    setCompletionSoundEnabled(
+      window.localStorage.getItem("onestep-completion-sound") !== "off"
+    );
+  }, []);
+
+  const handleSoundPreferenceChange = (enabled: boolean) => {
+    setCompletionSoundEnabled(enabled);
+    window.localStorage.setItem(
+      "onestep-completion-sound",
+      enabled ? "on" : "off"
+    );
+  };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,6 +134,26 @@ export default function ProfileSettingsPage() {
         </div>
       ) : (
         <div className="space-y-6">
+          <section className="flex items-center justify-between gap-4 rounded-2xl border border-slate-800 bg-slate-950/40 p-6">
+            <div>
+              <h3 className="font-medium text-white">Completion sound</h3>
+              <p className="mt-1 text-sm text-slate-400">
+                Play a gentle sound when your focus session ends.
+              </p>
+            </div>
+            <label className="relative inline-flex min-h-11 shrink-0 cursor-pointer items-center">
+              <input
+                type="checkbox"
+                className="peer sr-only"
+                checked={completionSoundEnabled}
+                onChange={(event) => handleSoundPreferenceChange(event.target.checked)}
+              />
+              <span className="h-6 w-11 rounded-full bg-slate-700 transition peer-checked:bg-blue-500 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500/50" />
+              <span className="absolute left-1 h-4 w-4 rounded-full bg-white transition peer-checked:translate-x-5" />
+              <span className="sr-only">Enable completion sound</span>
+            </label>
+          </section>
+
           {/* Profile Overview Card */}
           <div className="flex flex-col gap-6 rounded-2xl border border-slate-800 bg-slate-950/40 p-6 sm:flex-row sm:items-center">
             <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-blue-600/20 text-3xl font-bold text-blue-400 border border-blue-500/30">

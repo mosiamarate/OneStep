@@ -133,9 +133,9 @@ The client `ProtectedRoute` remains the Firebase-backed guard after the page loa
 
 ## Session Expiry and Rate Limiting
 
-OneStep now issues a short-lived logout token with each authenticated session. The logout token is stored in a secure cookie and expires after 24 hours, causing stale sessions to be cleared automatically when the user next interacts with the app.
+After Firebase client authentication, the app exchanges the Firebase ID token for a Firebase Admin session cookie. The session cookie is `HttpOnly`, `SameSite=Lax`, `Secure` in production, and expires after 24 hours. `src/proxy.ts` verifies invalid or revoked session cookies before allowing protected pages to load. Client-readable authentication cookies are UI hints only.
 
-Authentication-related API routes now apply rate limiting using `src/lib/rateLimit.ts`, protecting OTP, sign-in, and verification flows from repeated abuse.
+Authentication-related API routes use action-scoped rate limits from `src/lib/rateLimit.ts`. OTP verification, verification email delivery, password reset, account export, and account deletion use separate buckets. Multi-instance production deployments should back the limiter with a shared store or hosting-provider rate limiter.
 
 ## Deployment Checklist
 
