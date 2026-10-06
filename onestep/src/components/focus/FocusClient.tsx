@@ -16,9 +16,16 @@ import { useAuth } from "../../hooks/useAuth";
 import { db } from "../../lib/firebase";
 import {
   getFocusSession,
+  reconcileFocusSession,
   updateFocusSession,
 } from "../../services/focusSessionService";
 import type { FocusSessionStatus } from "../../types/focusSession";
+import {
+  BREAK_OPTIONS_MINUTES,
+  DEFAULT_FOCUS_MINUTES,
+  LONG_SESSION_MINUTES,
+  MAX_FOCUS_MINUTES,
+} from "../../constants/focus";
 
 interface WindowWithDocumentPictureInPicture extends Window {
   documentPictureInPicture?: {
@@ -64,10 +71,26 @@ const afterSessionMoods = [
 ];
 
 function formatTime(totalSeconds: number) {
+  const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
 
+  if (hours > 0) {
+    return `${hours}:${(minutes % 60).toString().padStart(2, "0")}:${seconds
+      .toString()
+      .padStart(2, "0")}`;
+  }
+
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
+function formatDuration(minutes: number) {
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+
+  if (!hours) return `${minutes} min`;
+  if (!remainingMinutes) return `${hours} hr`;
+  return `${hours} hr ${remainingMinutes} min`;
 }
 
 function escapeHtml(value: string) {
@@ -77,6 +100,16 @@ function escapeHtml(value: string) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function isStaleSessionTimestamp(value: unknown) {
+  if (!value || typeof value !== "object" || !("toDate" in value)) {
+    return false;
+  }
+
+  const timestamp = value as { toDate?: () => Date };
+  const date = timestamp.toDate?.();
+  return date instanceof Date && Date.now() - date.getTime() > 30_000;
 }
 
 export default function FocusClient() {
@@ -98,11 +131,11 @@ export default function FocusClient() {
     const parsedTime = Number(rawTime);
 
     if (!Number.isFinite(parsedTime) || parsedTime <= 0) {
-      return 25;
+      return DEFAULT_FOCUS_MINUTES;
     }
 
-    if (parsedTime > 180) {
-      return 25;
+    if (parsedTime > MAX_FOCUS_MINUTES) {
+      return DEFAULT_FOCUS_MINUTES;
     }
 
     return parsedTime;
@@ -123,6 +156,10 @@ export default function FocusClient() {
   const [saveError, setSaveError] = useState("");
   const [showEndModal, setShowEndModal] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+  const [showBreakPrompt, setShowBreakPrompt] = useState(false);
+  const [breakSeconds, setBreakSeconds] = useState(0);
+  const [breakRunning, setBreakRunning] = useState(false);
+  const [longSessionPromptShown, setLongSessionPromptShown] = useState(false);
   const wasRunningBeforeModalRef = useRef(false);
 
   const [afterMood, setAfterMood] = useState("");
@@ -142,12 +179,19 @@ export default function FocusClient() {
         const session = await getFocusSession(user.uid, sessionId);
         if (!session || cancelled) return;
 
-        setTaskTitle(session.taskTitle);
-        setTaskId(session.taskId);
-        setSessionDurationMinutes(session.originalDuration);
-        setSeconds(session.remainingTime);
-        setRunning(session.status === "active");
-        setCompleted(session.status === "completed");
+        const restoredSession =
+          session.status === "active" && isStaleSessionTimestamp(session.lastActiveAt)
+            ? await reconcileFocusSession(user.uid, session)
+            : session;
+
+        if (cancelled) return;
+
+        setTaskTitle(restoredSession.taskTitle);
+        setTaskId(restoredSession.taskId);
+        setSessionDurationMinutes(restoredSession.originalDuration);
+        setSeconds(restoredSession.remainingTime);
+        setRunning(restoredSession.status === "active");
+        setCompleted(restoredSession.status === "completed");
       } catch (error) {
         console.error("Error loading focus session:", error);
         if (!cancelled) setSaveError("We couldn’t restore this focus session.");
@@ -275,6 +319,38 @@ export default function FocusClient() {
   }, [running, completed, sessionLoading]);
 
   useEffect(() => {
+    if (!breakRunning || breakSeconds <= 0) return;
+
+    const breakTimer = window.setInterval(() => {
+      setBreakSeconds((current) => {
+        if (current <= 1) {
+          setBreakRunning(false);
+          return 0;
+        }
+
+        return current - 1;
+      });
+    }, 1000);
+
+    return () => window.clearInterval(breakTimer);
+  }, [breakRunning, breakSeconds]);
+
+  useEffect(() => {
+    const focusedMinutes = Math.floor((totalSeconds - seconds) / 60);
+
+    if (
+      running &&
+      !completed &&
+      focusedMinutes >= LONG_SESSION_MINUTES &&
+      !longSessionPromptShown
+    ) {
+      setLongSessionPromptShown(true);
+      setRunning(false);
+      setShowBreakPrompt(true);
+    }
+  }, [completed, longSessionPromptShown, running, seconds, totalSeconds]);
+
+  useEffect(() => {
     if (!running || completed || sessionLoading || !user || !sessionId) return;
 
     const checkpoint = window.setInterval(() => {
@@ -380,6 +456,13 @@ export default function FocusClient() {
     setSaveError("");
     setAfterMood("");
     setAfterMoodNote("");
+    setLongSessionPromptShown(false);
+  };
+
+  const startBreak = (minutes: number) => {
+    setBreakSeconds(minutes * 60);
+    setBreakRunning(true);
+    setShowBreakPrompt(false);
   };
 
   const handleRequestEndSession = () => {
@@ -657,7 +740,7 @@ export default function FocusClient() {
           relative
           min-h-screen
           overflow-hidden
-          bg-gradient-to-b
+          bg-linear-to-b
           from-slate-950
           via-slate-900
           to-slate-950
@@ -681,7 +764,7 @@ export default function FocusClient() {
               </h1>
 
               <p className="mx-auto max-w-xl text-slate-400">
-                Stay with one task. No pressure to be perfect — just keep coming
+                Stay with one task. No pressure to be perfect. Just keep coming
                 back to the next moment.
               </p>
             </div>
@@ -711,7 +794,7 @@ export default function FocusClient() {
 
               <div className="mx-auto mb-8 max-w-md">
                 <div className="mb-3 flex items-center justify-between text-sm text-slate-400">
-                  <span>{durationMinutes} min session</span>
+                  <span>{formatDuration(durationMinutes)} session</span>
                   <span>{Math.round(progress)}%</span>
                 </div>
 
@@ -724,7 +807,11 @@ export default function FocusClient() {
               </div>
 
               <div className="mb-8">
-                <p className="text-7xl font-bold tracking-tight text-white md:text-8xl">
+                <p
+                  className="text-6xl font-bold tabular-nums tracking-tight text-white sm:text-7xl md:text-8xl"
+                  aria-live="polite"
+                  aria-label={`${formatTime(seconds)} remaining`}
+                >
                   {formatTime(seconds)}
                 </p>
 
@@ -740,6 +827,64 @@ export default function FocusClient() {
               {toastMessage && (
                 <div className="mb-6 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
                   {toastMessage}
+                </div>
+              )}
+
+              {showBreakPrompt && !completed && (
+                <div
+                  className="mb-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 text-left"
+                  role="dialog"
+                  aria-labelledby="break-prompt-title"
+                >
+                  <h2 id="break-prompt-title" className="text-lg font-semibold text-amber-100">
+                    You have been focusing for 1 hour 30 minutes.
+                  </h2>
+                  <p className="mt-2 text-sm leading-relaxed text-amber-100/75">
+                    A short break can help you return with more energy. Pause here, take a break, or continue when you are ready.
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {BREAK_OPTIONS_MINUTES.map((minutes) => (
+                      <button
+                        key={minutes}
+                        type="button"
+                        onClick={() => startBreak(minutes)}
+                        className="rounded-xl bg-amber-400 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-amber-300"
+                      >
+                        Take {minutes} min
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowBreakPrompt(false);
+                        setRunning(true);
+                      }}
+                      className="rounded-xl border border-amber-500/40 px-4 py-2 text-sm font-medium text-amber-100 hover:bg-amber-500/10"
+                    >
+                      Continue
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {breakSeconds > 0 && (
+                <div className="mb-6 rounded-2xl border border-sky-500/30 bg-sky-500/10 p-5">
+                  <p className="text-sm font-medium uppercase tracking-[0.16em] text-sky-200">
+                    Break
+                  </p>
+                  <p className="mt-2 text-4xl font-semibold tabular-nums text-white">
+                    {formatTime(breakSeconds)}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBreakRunning(false);
+                      setBreakSeconds(0);
+                    }}
+                    className="mt-4 rounded-xl border border-sky-500/40 px-4 py-2 text-sm font-medium text-sky-100 hover:bg-sky-500/10"
+                  >
+                    End break
+                  </button>
                 </div>
               )}
 
@@ -863,6 +1008,22 @@ export default function FocusClient() {
                         Saving your session...
                       </p>
                     )}
+
+                    <div className="mt-5 border-t border-emerald-500/20 pt-5">
+                      <p className="text-sm text-slate-300">Take a break before your next step?</p>
+                      <div className="mt-3 flex flex-wrap justify-center gap-2">
+                        {BREAK_OPTIONS_MINUTES.map((minutes) => (
+                          <button
+                            key={minutes}
+                            type="button"
+                            onClick={() => startBreak(minutes)}
+                            className="rounded-xl border border-emerald-500/30 px-4 py-2 text-sm font-medium text-emerald-100 hover:bg-emerald-500/10"
+                          >
+                            {minutes} min break
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
 
                   <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-6 text-left">

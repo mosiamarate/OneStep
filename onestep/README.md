@@ -1,211 +1,64 @@
 # OneStep
 
-OneStep is a productivity and focus web application designed to help students and professionals work with greater clarity and intention. Instead of overwhelming users with long task lists or encouraging productivity streaks, OneStep promotes a calmer approach by guiding users to focus on one meaningful task at a time.
+OneStep is a Next.js productivity application built around a short, single-task flow: an authenticated user can check in on their mood, create a task, run a focus session, optionally add an after-session reflection, and view focus history.
 
-The application combines mood check-ins, focused work sessions, and personal progress tracking to help users build sustainable productivity habits while maintaining awareness of their mental well-being.
+This README is the repository entry point. The implementation-oriented documentation lives in [docs/README.md](docs/README.md).
 
----
+## Current implementation
 
-## Overview
+- Email/password and Google sign-in are provided by Firebase Authentication.
+- Email/password accounts are verified with a six-digit email code sent through Resend. Password reset also uses a six-digit code.
+- The browser reads and writes user profiles, mood check-ins, tasks, and focus sessions directly to Firestore. The checked-in repository does **not** contain Firestore rules or indexes, so the deployed authorization rules cannot be reviewed here.
+- Next.js route handlers create a 24-hour Firebase Admin session cookie, deliver email codes, export data, delete accounts, and expose the application version.
+- The production-only service worker pre-caches a small public shell and network-first caches same-origin `GET` responses. See [PWA documentation](docs/deployment/PWA.md) for its limitations.
+- Vercel Analytics is rendered in the root layout; Resend is used for transactional authentication and welcome emails.
 
-OneStep provides a simple workflow that helps users:
+The project is not represented here as security-audited, legally compliant, or production-ready. Those determinations require configuration and operational evidence outside this repository.
 
-- Create and securely manage an account
-- Verify their email before accessing the application
-- Track their mood before and after focus sessions
-- Create and manage one priority task
-- Complete distraction-free focus sessions
-- Review previous focus sessions and activity
-- Monitor productivity through a personalized dashboard
-
-The application is built as a Progressive Web App (PWA), allowing it to be installed and used across desktop and mobile devices.
-
----
-
-## Features
-
-### Authentication & Account Management
-
-- Secure email and password authentication
-- Google Sign-In
-- Email verification using One-Time Passwords (OTP)
-- Password reset using secure OTP verification
-- User Profile management (display name updates, profile photo, creation metadata)
-- GDPR-style data export generating a downloadable JSON file
-- Complete, secure account deletion with confirmation phrase verification (`DELETE MY ACCOUNT`)
-- Protected application routes and session management
-- Branded transactional emails powered by Resend
-
-### Dashboard
-
-- Personalized welcome experience
-- Overview of recent productivity
-- Current focus information
-- Recent mood summary
-- Quick access to core features
-
-### Mood Tracking
-
-- Mood check-ins before and after focus sessions
-- Optional reflection notes
-- Secure storage of mood history
-
-### Task Management
-
-- Single-task productivity workflow
-- Task creation and management
-- Custom focus duration selection
-- Timer presets
-
-### Focus Sessions
-
-- Countdown timer
-- Pause and resume controls
-- Reset functionality
-- Custom session durations
-- Automatic session history
-
-### History
-
-- Review previous focus sessions
-- View completed work
-- Monitor personal productivity over time
-
-### Progressive Web App
-
-- Installable on supported devices
-- Responsive design for desktop and mobile
-- Optimized for full-screen experience
-- Foundation for offline support
-
----
-
-## Technology Stack
-
-### Frontend
-
-- Next.js (App Router)
-- React 19
-- TypeScript
-- Tailwind CSS
-
-### Backend
-
-- Firebase Authentication
-- Firestore Database
-- Firebase Admin SDK
-- Next.js API Routes
-
-### Email
-
-- Resend
-- React Email
-
-### Deployment
-
-- Vercel
-
----
-
-## Application Routes
-
-| Route | Description |
-| -------- | ------------- |
-| `/` | Landing page |
-| `/auth/login` | User login |
-| `/auth/signup` | Create account |
-| `/auth/verify-email` | Email verification |
-| `/auth/forgot-password` | Request password reset |
-| `/auth/reset-password` | Reset password |
-| `/dashboard` | User dashboard |
-| `/settings/profile` | Profile management & info |
-| `/settings/account` | Account security & account deletion |
-| `/settings/data` | Data & Privacy GDPR data export |
-| `/mood` | Mood check-in |
-| `/task` | Task management |
-| `/focus` | Focus session |
-| `/history` | Focus history |
-| `/privacy` | Privacy Policy |
-| `/terms` | Terms of Service |
-
----
-
-## Application Flow
+## Repository layout
 
 ```text
-Landing Page
-      │
-      ▼
-Create Account / Login
-      │
-      ▼
-Email Verification
-      │
-      ▼
-Dashboard
-      │
-      ▼
-Mood Check-in
-      │
-      ▼
-Create Task
-      │
-      ▼
-Focus Session
-      │
-      ▼
-Post-Session Mood Reflection
-      │
-      ▼
-Dashboard & History
+src/                 Next.js application, route handlers, Firebase clients, and UI
+public/              Icons, completion sound, and service worker
+tests/               Playwright landing-page tests
+docs/                Engineering, product, security, privacy, deployment, and audit docs
+.github/workflows/   Playwright CI workflow
 ```
 
----
+## Local development
 
-## Security
+```bash
+npm ci
+npm run dev
+```
 
-OneStep follows modern authentication and security practices, including:
+Copy the public Firebase variables from `.env.example` into a local environment file. Authentication email routes, server-side session handling, data export, and account deletion also need server-side Firebase Admin credentials; email flows additionally need Resend configuration. The complete variable inventory and current fallbacks are in [Environment Variables](docs/deployment/ENVIRONMENT_VARIABLES.md).
 
-- Firebase Authentication identity & session handling
-- Secure email verification with OTP and OTP-based password reset
-- Session expiry enforced via logout tokens and route protection middleware
-- Rate limiting applied to authentication and OTP-related server routes
-- Protected application routes enforced via `proxy.ts` middleware & client components
-- Server-side ID token verification (`adminAuth.verifyIdToken()`) for all privileged endpoints
-- Firebase Admin SDK for server-side user data deletion and account management
-- GDPR data export containing user profile, tasks, mood history, and focus session records
-- Confirmation phrase safeguard (`DELETE MY ACCOUNT`) for destructive account deletion
-- Firestore Security Rules and server-only environment secret handling
-- Transactional email delivery using Resend
+Available package scripts are:
 
----
+```bash
+npm run dev
+npm run lint
+npm run build
+npm start
+```
 
-## Roadmap
+Playwright is configured but has no package script; run it with `npx playwright test` after its browsers are installed.
 
-Planned enhancements include:
+## Documentation
 
-- Floating mini focus timer
-- Weekly productivity insights
-- Recovery Mode
-- Achievement system
-- Calendar integration
-- Push notifications
-- Advanced analytics
-- Admin dashboard
-- Additional security hardening
+Start with [docs/README.md](docs/README.md). In particular:
 
----
+- [Architecture](docs/architecture/ARCHITECTURE.md) and [data model](docs/architecture/DATA_MODEL.md)
+- [Authentication](docs/security/AUTHENTICATION.md) and [security limits](docs/security/SECURITY.md)
+- [Data retention](docs/privacy/DATA_RETENTION.md) and [third-party services](docs/privacy/THIRD_PARTY_SERVICES.md)
+- [Development](docs/development/DEVELOPMENT.md), [testing](docs/development/TESTING.md), and [deployment evidence](docs/deployment/DEPLOYMENT.md)
+- [Production-readiness assessment](docs/audits/PRODUCTION_READINESS.md)
 
-## Author
+## Contributing and license
 
-Built by Mosia Marate.
+See [CONTRIBUTING.md](CONTRIBUTING.md). This repository does not grant an open-source license; see [LICENSE](LICENSE).
 
-Computer Networking Graduate and Software Developer passionate about building secure, user-focused productivity applications.
+## Version history
 
----
-
-## License
-
-This project is intended for portfolio, educational, and personal development purposes.
-
----
+Release notes are maintained in [CHANGELOG.md](CHANGELOG.md).

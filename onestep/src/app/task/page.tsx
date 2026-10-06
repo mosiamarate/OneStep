@@ -15,6 +15,7 @@ import { createFocusSession } from "../../services/focusSessionService";
 import { FirebaseError } from "firebase/app";
 
 import Footer from "../../components/layout/Footer";
+import { MAX_FOCUS_MINUTES } from "../../constants/focus";
 
 export default function TaskPage() {
   const router = useRouter();
@@ -45,8 +46,8 @@ export default function TaskPage() {
       return;
     }
 
-    if (selectedTime < 1 || selectedTime > 180) {
-      setError("Please choose a focus time between 1 and 180 minutes.");
+    if (selectedTime < 1 || selectedTime > MAX_FOCUS_MINUTES) {
+      setError("Please choose a focus time between 1 minute and 24 hours.");
       return;
     }
 
@@ -74,7 +75,11 @@ export default function TaskPage() {
       console.error("Error creating task:", error);
 
       if (error instanceof FirebaseError) {
-        setError(`Firebase error: ${error.code}`);
+        setError(
+          error.code === "permission-denied"
+            ? "You do not have permission to start this focus session."
+            : "We couldn’t start your focus session. Please try again."
+        );
       } else {
         setError("We couldn’t start your focus session. Please try again.");
       }
@@ -90,7 +95,7 @@ export default function TaskPage() {
           relative
           min-h-screen
           overflow-hidden
-          bg-gradient-to-b
+          bg-linear-to-b
           from-slate-950
           via-slate-900
           to-slate-950
@@ -114,7 +119,7 @@ export default function TaskPage() {
               </h1>
 
               <p className="mx-auto max-w-xl text-slate-400">
-                Keep it simple. You don’t need to plan your whole day — just
+                Keep it simple. You don’t need to plan your whole day, just
                 choose the next gentle step.
               </p>
             </div>

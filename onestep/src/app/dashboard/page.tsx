@@ -32,6 +32,15 @@ function getGreeting() {
   return "Good evening";
 }
 
+function formatDuration(minutes: number) {
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+
+  if (!hours) return `${minutes} minutes`;
+  if (!remainingMinutes) return `${hours} ${hours === 1 ? "hour" : "hours"}`;
+  return `${hours}h ${remainingMinutes}m`;
+}
+
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading } = useUserProfile();
@@ -239,11 +248,11 @@ export default function DashboardPage() {
                   <p className="text-sm font-medium uppercase tracking-[0.2em] text-blue-300">
                     Your focus session is still here
                   </p>
-                  <h2 className="mt-2 break-words text-xl font-semibold text-white">
+                  <h2 className="mt-2 wrap-break-word text-xl font-semibold text-white">
                     {unfinishedSession.taskTitle}
                   </h2>
                   <p className="mt-2 text-sm text-slate-300">
-                    {Math.ceil(unfinishedSession.remainingTime / 60)} minutes remaining. You don’t have to start over.
+                    {formatDuration(Math.ceil(unfinishedSession.remainingTime / 60))} remaining. You don’t have to start over.
                   </p>
                   <div className="mt-4 flex flex-col gap-3 sm:flex-row">
                     <Link href={primaryHref} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-blue-500 px-5 py-3 font-medium text-white hover:bg-blue-600">
@@ -326,11 +335,11 @@ export default function DashboardPage() {
 
               <div className="mt-8 rounded-2xl border border-blue-500/20 bg-blue-500/10 p-6">
                 <p className="text-sm font-medium uppercase tracking-[0.2em] text-blue-300">Your next step</p>
-                <h2 className="mt-2 break-words text-xl font-semibold text-white">
+                <h2 className="mt-2 wrap-break-word text-xl font-semibold text-white">
                   {statsLoading ? "Loading..." : stats.activeTask?.title || "What would you like to focus on?"}
                 </h2>
                 <p className="mt-2 text-sm text-slate-400">
-                  {stats.activeTask ? `${stats.activeTask.durationMinutes}-minute focus session` : "Choose one clear task and give it your attention."}
+                  {stats.activeTask ? `${formatDuration(stats.activeTask.durationMinutes)} focus session` : "Choose one clear task and give it your attention."}
                 </p>
               </div>
 

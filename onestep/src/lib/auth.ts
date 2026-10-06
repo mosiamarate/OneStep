@@ -177,17 +177,17 @@ export function getAuthErrorMessage(error: unknown) {
       case "auth/too-many-requests":
         return "Too many attempts. Please wait a while and try again.";
 
+      case "auth/user-disabled":
+        return "This account is unavailable. Please contact support.";
+
       case "auth/expired-action-code":
         return "This reset link has expired. Please request a new one.";
 
       case "auth/invalid-action-code":
         return "This reset link is invalid or has already been used.";
 
-      case "auth/weak-password":
-        return "Password should be at least 6 characters.";
-
       default:
-        return `Authentication error: ${error.code}`;
+        return "Authentication failed. Please try again.";
     }
   }
 

@@ -1,3 +1,5 @@
+import { DEFAULT_FOCUS_MINUTES, MAX_FOCUS_MINUTES } from "../constants/focus";
+
 export type FocusSessionStatus =
   | "active"
   | "paused"
@@ -39,8 +41,8 @@ export function normalizeFocusSession(
   const originalDuration = clampNumber(
     data.originalDuration ?? data.durationMinutes ?? data.duration,
     1,
-    180,
-    25
+    MAX_FOCUS_MINUTES,
+    DEFAULT_FOCUS_MINUTES
   );
   const legacyActualMinutes = clampNumber(
     data.actualDuration,

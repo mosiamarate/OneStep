@@ -15,8 +15,7 @@ import {
   type FocusSession,
   type FocusSessionStatus,
 } from "../types/focusSession";
-
-const MAX_DURATION_MINUTES = 180;
+import { MAX_FOCUS_MINUTES } from "../constants/focus";
 
 export async function getUserFocusSessions(userId: string) {
   const snapshot = await getDocs(
@@ -63,7 +62,7 @@ export async function createFocusSession(input: {
     !input.taskId ||
     !input.taskTitle.trim() ||
     duration < 1 ||
-    duration > MAX_DURATION_MINUTES
+    duration > MAX_FOCUS_MINUTES
   ) {
     throw new Error("Invalid focus session details.");
   }
