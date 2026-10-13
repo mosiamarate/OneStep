@@ -163,7 +163,7 @@ export default function FocusClient() {
   const [nextBreakAtMinutes, setNextBreakAtMinutes] =
     useState(BREAK_INTERVAL_MINUTES);
   const [breakDurationMinutes, setBreakDurationMinutes] =
-    useState(BREAK_OPTIONS_MINUTES[0]);
+    useState<number>(BREAK_OPTIONS_MINUTES[0]);
   const [resumeFocusAfterBreak, setResumeFocusAfterBreak] = useState(false);
   const wasRunningBeforeModalRef = useRef(false);
 

@@ -28,7 +28,9 @@ export default function TaskPage() {
 
   const [task, setTask] = useState("");
   const [selectedTime, setSelectedTime] = useState(DEFAULT_FOCUS_MINUTES);
-  const [selectedBreakMinutes, setSelectedBreakMinutes] = useState(
+  const [selectedBreakMinutes, setSelectedBreakMinutes] = useState<
+    (typeof BREAK_OPTIONS_MINUTES)[number]
+  >(
     BREAK_OPTIONS_MINUTES[0]
   );
   const [error, setError] = useState("");
