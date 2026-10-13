@@ -1,6 +1,6 @@
 # Technology stack
 
-Versions below distinguish the declared dependency range from the locally resolved package when it was observed during the 2026-09-23 build. Caret ranges can resolve newer compatible releases.
+Versions below distinguish the declared dependency range from locally resolved package versions observed during the 2026-09-23 build. The manifest has since changed; declared ranges below reflect the checked-in `package.json` as inspected on 2026-10-13. Caret ranges can resolve newer compatible releases.
 
 | Area | Implementation |
 | --- | --- |
@@ -9,7 +9,7 @@ Versions below distinguish the declared dependency range from the locally resolv
 | Authentication and database | Firebase Web SDK `^12.10.0` (local `12.10.0`), Firebase Admin SDK `^14.2.0` (local `14.3.0`), Firebase Authentication, Cloud Firestore |
 | Email | Resend `^6.18.1` (local `6.18.1`), React Email and `@react-email/components` |
 | Analytics integration | `@vercel/analytics/react` is rendered in the root layout |
-| Testing | Playwright `^1.62.1` (local `1.62.1`) |
+| Testing | Playwright `^1.64.0` declared; current locally resolved version not re-verified |
 | Linting | ESLint `^9` (local `9.39.4`) with `eslint-config-next` core-web-vitals and TypeScript configurations |
 | PWA assets | Next metadata manifest and a hand-written `public/sw.js` |
 

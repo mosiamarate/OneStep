@@ -11,9 +11,11 @@
 
 The GitHub workflow installs dependencies with `npm ci`, installs Playwright browsers with dependencies, runs `npx playwright test`, and uploads `playwright-report/` for 30 days when the run is not cancelled.
 
-## Most recent local execution
+## Historical local execution
 
 On 2026-09-23, `npm run lint` and `npm run build` passed. The build emitted a non-blocking warning that an outer workspace `package-lock.json` was selected as the Turbopack root. `npx playwright test` ran 12 tests: 8 passed (Chromium and WebKit); all 4 Firefox tests failed during `browserContext.newPage` setup with `Cannot read properties of undefined (reading '_page')`, before an application assertion. This is a local test-environment result, not a diagnosis of Firefox product behavior.
+
+On 2026-10-13, the production build reported TS2345 in `FocusClient.tsx`: the initial break duration inferred the state type as the literal `5`, while restoring a session supplies a general number. The state was widened explicitly to `number`. Editor diagnostics then reported no problems in that file, but a full build could not be rerun in that environment; the current production build result is unverified. The user also observed a Turbopack-root warning caused by an outer workspace lockfile; it is separate from the type error.
 
 ## Coverage limits
 
@@ -30,6 +32,6 @@ The repository has no tracked unit-test framework, component test suite, Firebas
 | Service worker | Browser test or manual inspection of Cache Storage, including authenticated/export requests |
 | Accessibility | Automated scanner plus keyboard and screen-reader review of changed flows |
 
-Timer changes should also verify 25-minute, 90-minute, and multi-hour sessions; hour/minute selector keyboard use; the 90-minute break prompt; completed-session break choices; refresh recovery; and mobile layouts at 320px and 390px widths.
+Timer changes should also verify the default 25-minute session, a session just over 60 minutes, a session ending exactly at 60 minutes, two-hour and longer sessions, and scheduled prompts at each hourly threshold; hour/minute selector keyboard use; the configured scheduled-break duration and skip action; completed-session break choices; refresh recovery; and mobile layouts at 320px and 390px widths.
 
 `npm run lint` and `npm run build` are useful local checks, but neither validates production Firebase configuration or provider integrations.

@@ -36,9 +36,9 @@ Dashboard
   -> active focus-session write
   -> /focus?sessionId=...
   -> pause/resume/checkpoints, hour-aware countdown, or end decision
-  -> after 90 minutes, optional 5/10/15-minute break prompt
+  -> at each elapsed-focus hour threshold before the session ends, optional configured 5/10/15/20/30-minute break or skip
   -> completed, cancelled, or interrupted session
-  -> optional break before the next session and after-session reflection
+  -> optional 5/10/15-minute break before the next session and after-session reflection
   -> dashboard, next mood check-in, or history
 ```
 

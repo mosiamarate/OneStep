@@ -1,6 +1,6 @@
 # OneStep engineering documentation
 
-This documentation describes the checked-in application under `onestep/` as inspected on 2026-09-23. It distinguishes observable implementation from configuration and operations that are not present in the repository.
+This documentation describes the checked-in application under `onestep/` as inspected on 2026-10-13. It distinguishes observable implementation from configuration and operations that are not present in the repository. Audit dates and validation results in individual documents are historical unless explicitly updated.
 
 The source files, package manifest, GitHub workflow, and existing history are the technical evidence for these documents. Firebase Console settings, Firestore rules and indexes, Resend domain status, deployed Vercel settings, production logs, backups, and external legal assessments are not available here unless stated otherwise.
 

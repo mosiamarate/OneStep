@@ -24,11 +24,12 @@ After completion, the focus UI offers Better, Proud, Calm, Tired, Same, and Stil
 - Available duration is 1 minute–24 hours. The duration picker offers presets, scrollable hour/minute wheels, and an exact-minutes keyboard fallback.
 - A normal start first writes an active `tasks` record, then writes an active `focusSessions` record.
 - Active sessions count down in the browser and checkpoint focus progress every 15 seconds. Displays switch to `H:MM:SS` for sessions lasting an hour or longer.
-- After 90 minutes of continuous focus, OneStep pauses and offers a 5, 10, or 15-minute break. Completed sessions offer the same break choices before the next session.
+- For sessions longer than 60 minutes, OneStep pauses at each elapsed-focus threshold (60 minutes, then hourly) and offers the configured 5-, 10-, 15-, 20-, or 30-minute break, or lets the user skip it. A session ending at a threshold does not prompt for a scheduled break. After a completed session, the optional break choices are 5, 10, or 15 minutes.
 - Pause/resume, completed, interrupted, and cancelled states are stored through focus-session transactions.
 - The end dialog can continue, save as completed, or mark the task/session cancelled while retaining elapsed progress in session history.
 - A reset changes local timer state but is not a dedicated persisted reset operation until a later session update occurs.
 - Completion plays an MP3 unless the user disabled the local sound preference.
+- The focus break-duration state is explicitly typed as `number`, so it accepts restored values from persisted sessions instead of being narrowed to the default literal `5`. This is a TypeScript correctness fix; it does not change the user-facing behavior.
 
 The implementation allows one unfinished focus session through client/service checks, but task and session writes are not atomic. A failed session creation can leave an active task record.
 

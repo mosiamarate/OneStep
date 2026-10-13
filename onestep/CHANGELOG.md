@@ -2,6 +2,12 @@
 
 All notable changes to OneStep are documented in this file. Release notes describe repository history; they are not a claim that a particular deployment received every change.
 
+## [1.2.2] - 2026-10-13
+
+### Fixed
+
+- Corrected the focus break-duration state type so restored session durations are accepted during TypeScript checking; no runtime behavior changed.
+
 ## [1.2.0] - 2026-08-29
 
 ### Added
@@ -72,6 +78,7 @@ All notable changes to OneStep are documented in this file. Release notes descri
 
 | Version | Date | Release focus |
 | --- | --- | --- |
+| 1.2.2 | 2026-10-13 | Focus break-duration state typing fix |
 | 1.2.0 | 2026-08-29 | Update prompt and version bump |
 | 1.1.0 | 2026-08-08 | Account settings, export, deletion, and focus-session states |
 | 1.0.3 | 2026-08-08 | Resend emails and OTP flows |

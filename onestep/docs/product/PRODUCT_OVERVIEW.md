@@ -14,7 +14,7 @@ The landing page describes OneStep for people who want a calmer way to focus on 
 | Dashboard | Shows today-derived mood/task/focus values, most recent completed focus context, next-step link, and unfinished-session recovery controls |
 | Mood check-in | Lets users select Tired, Stressed, Okay, or Good and optionally enter a 220-character note; users can skip to task selection |
 | One task | Creates a title of 3–100 characters, a 1-minute–24-hour duration, an active task record, and then a focus-session record |
-| Focus | Countdown with hour-aware display, pause/resume, reset, end choices, 15-second active checkpoints, completed/paused/interrupted/cancelled state, optional Picture-in-Picture mini timer, long-session break prompt, optional between-session breaks, and completion sound preference |
+| Focus | Countdown with hour-aware display, pause/resume, reset, end choices, 15-second active checkpoints, completed/paused/interrupted/cancelled state, optional Picture-in-Picture mini timer, scheduled break prompts at hourly elapsed-focus thresholds when more session time remains (5/10/15/20/30-minute configured duration), optional 5/10/15-minute between-session break, and completion sound preference |
 | Reflection/history | After a completed session, users can add one of six after-session moods and optional note. History combines session records with matching after-focus mood records. |
 | Account settings | Display-name update, sound preference, JSON data export, and account deletion request |
 | PWA | Manifest, install prompt when browser support permits, service worker, and version-refresh prompt |
