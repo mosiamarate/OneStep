@@ -15,7 +15,11 @@ import {
   type FocusSession,
   type FocusSessionStatus,
 } from "../types/focusSession";
-import { MAX_FOCUS_MINUTES } from "../constants/focus";
+import {
+  BREAK_INTERVAL_MINUTES,
+  BREAK_OPTIONS_MINUTES,
+  MAX_FOCUS_MINUTES,
+} from "../constants/focus";
 
 export async function getUserFocusSessions(userId: string) {
   const snapshot = await getDocs(
@@ -55,14 +59,22 @@ export async function createFocusSession(input: {
   taskId: string;
   taskTitle: string;
   durationMinutes: number;
+  breakDurationMinutes?: number;
 }) {
   const duration = Math.round(input.durationMinutes);
+  const breakDuration =
+    input.breakDurationMinutes === undefined
+      ? BREAK_OPTIONS_MINUTES[0]
+      : BREAK_OPTIONS_MINUTES.find(
+          (minutes) => minutes === input.breakDurationMinutes
+        );
   if (
     !input.userId ||
     !input.taskId ||
     !input.taskTitle.trim() ||
     duration < 1 ||
-    duration > MAX_FOCUS_MINUTES
+    duration > MAX_FOCUS_MINUTES ||
+    breakDuration === undefined
   ) {
     throw new Error("Invalid focus session details.");
   }
@@ -81,6 +93,8 @@ export async function createFocusSession(input: {
     remainingTime: duration * 60,
     remainingSeconds: duration * 60,
     focusedSeconds: 0,
+    nextBreakAtMinutes: BREAK_INTERVAL_MINUTES,
+    breakDurationMinutes: breakDuration,
     actualDuration: 0,
     interruptionCount: 0,
     startedAt: serverTimestamp(),
@@ -101,6 +115,7 @@ export async function createFocusSession(input: {
     remainingTime: duration * 60,
     focusedSeconds: 0,
     interruptionCount: 0,
+    breakDurationMinutes: breakDuration,
   });
 }
 
@@ -109,7 +124,8 @@ export async function updateFocusSession(
   sessionId: string,
   nextStatus: FocusSessionStatus,
   remainingTime: number,
-  focusedSeconds: number
+  focusedSeconds: number,
+  nextBreakAtMinutes?: number
 ) {
   const sessionRef = doc(db, "focusSessions", sessionId);
 
@@ -131,11 +147,19 @@ export async function updateFocusSession(
       current.originalDuration * 60,
       Math.max(0, Math.round(focusedSeconds))
     );
+    const safeNextBreakAtMinutes = Math.min(
+      MAX_FOCUS_MINUTES + BREAK_INTERVAL_MINUTES,
+      Math.max(
+        BREAK_INTERVAL_MINUTES,
+        Math.round(nextBreakAtMinutes ?? current.nextBreakAtMinutes)
+      )
+    );
     const updates: Record<string, unknown> = {
       status: nextStatus,
       remainingTime: safeRemaining,
       remainingSeconds: safeRemaining,
       focusedSeconds: safeFocused,
+      nextBreakAtMinutes: safeNextBreakAtMinutes,
       actualDuration: Math.round(safeFocused / 60),
       lastActiveAt: serverTimestamp(),
       updatedAt: serverTimestamp(),

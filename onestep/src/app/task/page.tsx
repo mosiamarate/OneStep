@@ -15,14 +15,22 @@ import { createFocusSession } from "../../services/focusSessionService";
 import { FirebaseError } from "firebase/app";
 
 import Footer from "../../components/layout/Footer";
-import { MAX_FOCUS_MINUTES } from "../../constants/focus";
+import {
+  BREAK_INTERVAL_MINUTES,
+  BREAK_OPTIONS_MINUTES,
+  DEFAULT_FOCUS_MINUTES,
+  MAX_FOCUS_MINUTES,
+} from "../../constants/focus";
 
 export default function TaskPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
 
   const [task, setTask] = useState("");
-  const [selectedTime, setSelectedTime] = useState(25);
+  const [selectedTime, setSelectedTime] = useState(DEFAULT_FOCUS_MINUTES);
+  const [selectedBreakMinutes, setSelectedBreakMinutes] = useState(
+    BREAK_OPTIONS_MINUTES[0]
+  );
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -68,6 +76,7 @@ export default function TaskPage() {
         taskId: taskRef.id,
         taskTitle: trimmedTask,
         durationMinutes: selectedTime,
+        breakDurationMinutes: selectedBreakMinutes,
       });
 
       router.push(`/focus?sessionId=${session.id}`);
@@ -218,6 +227,42 @@ export default function TaskPage() {
                     disabled={saving || authLoading}
                   />
                 </div>
+
+                {selectedTime >= BREAK_INTERVAL_MINUTES && (
+                  <fieldset
+                    disabled={saving || authLoading}
+                    className="space-y-3"
+                  >
+                    <legend className="text-sm font-medium text-slate-300">
+                      Break length after each hour of focus
+                    </legend>
+                    <p className="text-sm text-slate-400">
+                      For sessions over an hour, this break is offered after
+                      each full hour when more focus time remains.
+                    </p>
+                    <div
+                      className="flex flex-wrap gap-2"
+                      role="group"
+                      aria-label="Break length"
+                    >
+                      {BREAK_OPTIONS_MINUTES.map((minutes) => (
+                        <button
+                          key={minutes}
+                          type="button"
+                          aria-pressed={selectedBreakMinutes === minutes}
+                          onClick={() => setSelectedBreakMinutes(minutes)}
+                          className={`min-h-11 rounded-xl border px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
+                            selectedBreakMinutes === minutes
+                              ? "border-blue-500 bg-blue-500/15 text-blue-200"
+                              : "border-slate-800 bg-slate-950/50 text-slate-400 hover:border-slate-700 hover:text-white"
+                          }`}
+                        >
+                          {minutes} min
+                        </button>
+                      ))}
+                    </div>
+                  </fieldset>
+                )}
 
                 <div className="pt-2">
                   <Button

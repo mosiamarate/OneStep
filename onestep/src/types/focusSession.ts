@@ -1,4 +1,9 @@
-import { DEFAULT_FOCUS_MINUTES, MAX_FOCUS_MINUTES } from "../constants/focus";
+import {
+  BREAK_INTERVAL_MINUTES,
+  BREAK_OPTIONS_MINUTES,
+  DEFAULT_FOCUS_MINUTES,
+  MAX_FOCUS_MINUTES,
+} from "../constants/focus";
 
 export type FocusSessionStatus =
   | "active"
@@ -16,6 +21,8 @@ export interface FocusSession {
   originalDuration: number;
   remainingTime: number;
   focusedSeconds: number;
+  nextBreakAtMinutes: number;
+  breakDurationMinutes: number;
   interruptionCount: number;
   startedAt: unknown;
   lastActiveAt: unknown;
@@ -62,7 +69,33 @@ export function normalizeFocusSession(
     originalDuration * 60,
     Math.max(0, originalDuration * 60 - focusedSeconds)
   );
-
+  const normalizedFocusedSeconds = Math.min(
+    originalDuration * 60,
+    Math.max(focusedSeconds, originalDuration * 60 - remainingTime)
+  );
+  const nextBreakAtMinutes =
+    typeof data.nextBreakAtMinutes === "number" &&
+    Number.isFinite(data.nextBreakAtMinutes)
+      ? clampNumber(
+          data.nextBreakAtMinutes,
+          BREAK_INTERVAL_MINUTES,
+          MAX_FOCUS_MINUTES + BREAK_INTERVAL_MINUTES,
+          BREAK_INTERVAL_MINUTES
+        )
+      : Math.max(
+          BREAK_INTERVAL_MINUTES,
+          (Math.floor(normalizedFocusedSeconds / (BREAK_INTERVAL_MINUTES * 60)) +
+            1) *
+            BREAK_INTERVAL_MINUTES
+        );
+  const persistedBreakDurationMinutes =
+    typeof data.breakDurationMinutes === "number"
+      ? BREAK_OPTIONS_MINUTES.find(
+          (minutes) => minutes === data.breakDurationMinutes
+        )
+      : undefined;
+  const breakDurationMinutes =
+    persistedBreakDurationMinutes ?? BREAK_OPTIONS_MINUTES[0];
   return {
     id,
     userId: typeof data.userId === "string" ? data.userId : "",
@@ -74,10 +107,9 @@ export function normalizeFocusSession(
     status: getStatus(data),
     originalDuration,
     remainingTime,
-    focusedSeconds: Math.min(
-      originalDuration * 60,
-      Math.max(focusedSeconds, originalDuration * 60 - remainingTime)
-    ),
+    focusedSeconds: normalizedFocusedSeconds,
+    nextBreakAtMinutes,
+    breakDurationMinutes,
     interruptionCount: clampNumber(data.interruptionCount, 0, 100, 0),
     startedAt: data.startedAt ?? data.createdAt ?? null,
     lastActiveAt: data.lastActiveAt ?? null,

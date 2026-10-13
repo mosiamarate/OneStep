@@ -67,5 +67,3 @@ dist
 /playwright/.cache/
 /playwright/.auth/
 
-# Mobile app
-/OnestepAppMobile/

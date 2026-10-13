@@ -21,10 +21,11 @@ import {
 } from "../../services/focusSessionService";
 import type { FocusSessionStatus } from "../../types/focusSession";
 import {
+  BREAK_INTERVAL_MINUTES,
   BREAK_OPTIONS_MINUTES,
   DEFAULT_FOCUS_MINUTES,
-  LONG_SESSION_MINUTES,
   MAX_FOCUS_MINUTES,
+  POST_SESSION_BREAK_OPTIONS_MINUTES,
 } from "../../constants/focus";
 
 interface WindowWithDocumentPictureInPicture extends Window {
@@ -159,7 +160,11 @@ export default function FocusClient() {
   const [showBreakPrompt, setShowBreakPrompt] = useState(false);
   const [breakSeconds, setBreakSeconds] = useState(0);
   const [breakRunning, setBreakRunning] = useState(false);
-  const [longSessionPromptShown, setLongSessionPromptShown] = useState(false);
+  const [nextBreakAtMinutes, setNextBreakAtMinutes] =
+    useState(BREAK_INTERVAL_MINUTES);
+  const [breakDurationMinutes, setBreakDurationMinutes] =
+    useState(BREAK_OPTIONS_MINUTES[0]);
+  const [resumeFocusAfterBreak, setResumeFocusAfterBreak] = useState(false);
   const wasRunningBeforeModalRef = useRef(false);
 
   const [afterMood, setAfterMood] = useState("");
@@ -190,6 +195,8 @@ export default function FocusClient() {
         setTaskId(restoredSession.taskId);
         setSessionDurationMinutes(restoredSession.originalDuration);
         setSeconds(restoredSession.remainingTime);
+        setNextBreakAtMinutes(restoredSession.nextBreakAtMinutes);
+        setBreakDurationMinutes(restoredSession.breakDurationMinutes);
         setRunning(restoredSession.status === "active");
         setCompleted(restoredSession.status === "completed");
       } catch (error) {
@@ -209,6 +216,33 @@ export default function FocusClient() {
   useEffect(() => {
     secondsRef.current = seconds;
   }, [seconds]);
+
+  const persistFocusStatus = useCallback(
+    async (nextStatus: FocusSessionStatus, nextBreakMinute: number) => {
+      if (!user || !sessionId) return;
+      await updateFocusSession(
+        user.uid,
+        sessionId,
+        nextStatus,
+        secondsRef.current,
+        totalSeconds - secondsRef.current,
+        nextBreakMinute
+      );
+    },
+    [sessionId, totalSeconds, user]
+  );
+
+  const resumeFocusTimer = useCallback(async () => {
+    try {
+      await persistFocusStatus("active", nextBreakAtMinutes);
+      setResumeFocusAfterBreak(false);
+      setShowBreakPrompt(false);
+      setRunning(true);
+    } catch (error) {
+      console.error("Error resuming focus session:", error);
+      setSaveError("We couldn’t resume this focus session. Please try again.");
+    }
+  }, [nextBreakAtMinutes, persistFocusStatus]);
 
   const progress = useMemo(() => {
     const completedSeconds = totalSeconds - seconds;
@@ -323,12 +357,7 @@ export default function FocusClient() {
 
     const breakTimer = window.setInterval(() => {
       setBreakSeconds((current) => {
-        if (current <= 1) {
-          setBreakRunning(false);
-          return 0;
-        }
-
-        return current - 1;
+        return Math.max(0, current - 1);
       });
     }, 1000);
 
@@ -336,19 +365,46 @@ export default function FocusClient() {
   }, [breakRunning, breakSeconds]);
 
   useEffect(() => {
-    const focusedMinutes = Math.floor((totalSeconds - seconds) / 60);
+    if (!breakRunning || breakSeconds > 0) return;
+
+    setBreakRunning(false);
+    if (resumeFocusAfterBreak) {
+      void resumeFocusTimer();
+    }
+  }, [
+    breakRunning,
+    breakSeconds,
+    resumeFocusTimer,
+    resumeFocusAfterBreak,
+  ]);
+
+  useEffect(() => {
+    const focusedSeconds = totalSeconds - seconds;
 
     if (
       running &&
       !completed &&
-      focusedMinutes >= LONG_SESSION_MINUTES &&
-      !longSessionPromptShown
+      focusedSeconds >= nextBreakAtMinutes * 60 &&
+      nextBreakAtMinutes < durationMinutes
     ) {
-      setLongSessionPromptShown(true);
+      const nextBreakMinute = nextBreakAtMinutes + BREAK_INTERVAL_MINUTES;
+      setNextBreakAtMinutes(nextBreakMinute);
       setRunning(false);
       setShowBreakPrompt(true);
+      void persistFocusStatus("paused", nextBreakMinute).catch((error) => {
+        console.error("Error pausing focus session for scheduled break:", error);
+        setSaveError("We couldn’t save the focus break. Please try again.");
+      });
     }
-  }, [completed, longSessionPromptShown, running, seconds, totalSeconds]);
+  }, [
+    completed,
+    durationMinutes,
+    nextBreakAtMinutes,
+    persistFocusStatus,
+    running,
+    seconds,
+    totalSeconds,
+  ]);
 
   useEffect(() => {
     if (!running || completed || sessionLoading || !user || !sessionId) return;
@@ -359,12 +415,21 @@ export default function FocusClient() {
         sessionId,
         "active",
         secondsRef.current,
-        totalSeconds - secondsRef.current
+        totalSeconds - secondsRef.current,
+        nextBreakAtMinutes
       ).catch((error) => console.error("Error checkpointing focus session:", error));
     }, 15000);
 
     return () => window.clearInterval(checkpoint);
-  }, [completed, running, sessionId, sessionLoading, totalSeconds, user]);
+  }, [
+    completed,
+    nextBreakAtMinutes,
+    running,
+    sessionId,
+    sessionLoading,
+    totalSeconds,
+    user,
+  ]);
 
   useEffect(() => {
     if (seconds === 0 && !completed) {
@@ -428,20 +493,25 @@ export default function FocusClient() {
   }, []);
 
   const handlePauseResume = async () => {
-    if (!user || !sessionId || completed || endingSession) return;
+    if (
+      !user ||
+      !sessionId ||
+      completed ||
+      endingSession ||
+      (!running && (showBreakPrompt || breakSeconds > 0))
+    ) {
+      return;
+    }
 
     const nextRunning = !running;
     const nextStatus: FocusSessionStatus = nextRunning ? "active" : "paused";
 
     try {
-      await updateFocusSession(
-        user.uid,
-        sessionId,
-        nextStatus,
-        secondsRef.current,
-        totalSeconds - secondsRef.current
-      );
+      await persistFocusStatus(nextStatus, nextBreakAtMinutes);
       setRunning(nextRunning);
+      if (nextRunning) {
+        setResumeFocusAfterBreak(false);
+      }
     } catch (error) {
       console.error("Error updating focus session:", error);
       setSaveError("We couldn’t update this focus session. Please try again.");
@@ -456,13 +526,26 @@ export default function FocusClient() {
     setSaveError("");
     setAfterMood("");
     setAfterMoodNote("");
-    setLongSessionPromptShown(false);
+    setShowBreakPrompt(false);
+    setBreakSeconds(0);
+    setBreakRunning(false);
+    setResumeFocusAfterBreak(false);
+    setNextBreakAtMinutes(BREAK_INTERVAL_MINUTES);
   };
 
-  const startBreak = (minutes: number) => {
+  const startBreak = (minutes: number, resumeFocus = false) => {
     setBreakSeconds(minutes * 60);
     setBreakRunning(true);
+    setResumeFocusAfterBreak(resumeFocus);
     setShowBreakPrompt(false);
+  };
+
+  const finishBreak = () => {
+    setBreakRunning(false);
+    setBreakSeconds(0);
+    if (resumeFocusAfterBreak) {
+      void resumeFocusTimer();
+    }
   };
 
   const handleRequestEndSession = () => {
@@ -837,31 +920,26 @@ export default function FocusClient() {
                   aria-labelledby="break-prompt-title"
                 >
                   <h2 id="break-prompt-title" className="text-lg font-semibold text-amber-100">
-                    You have been focusing for 1 hour 30 minutes.
+                    You have been focusing for{" "}
+                    {formatDuration(nextBreakAtMinutes - BREAK_INTERVAL_MINUTES)}.
                   </h2>
                   <p className="mt-2 text-sm leading-relaxed text-amber-100/75">
-                    A short break can help you return with more energy. Pause here, take a break, or continue when you are ready.
+                    Take your {breakDurationMinutes}-minute break before continuing, or skip it and focus until the next hour.
                   </p>
                   <div className="mt-4 flex flex-wrap gap-2">
-                    {BREAK_OPTIONS_MINUTES.map((minutes) => (
-                      <button
-                        key={minutes}
-                        type="button"
-                        onClick={() => startBreak(minutes)}
-                        className="rounded-xl bg-amber-400 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-amber-300"
-                      >
-                        Take {minutes} min
-                      </button>
-                    ))}
                     <button
                       type="button"
-                      onClick={() => {
-                        setShowBreakPrompt(false);
-                        setRunning(true);
-                      }}
+                      onClick={() => startBreak(breakDurationMinutes, true)}
+                      className="rounded-xl bg-amber-400 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-amber-300"
+                    >
+                      Take {breakDurationMinutes} min break
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void resumeFocusTimer()}
                       className="rounded-xl border border-amber-500/40 px-4 py-2 text-sm font-medium text-amber-100 hover:bg-amber-500/10"
                     >
-                      Continue
+                      Skip break
                     </button>
                   </div>
                 </div>
@@ -877,10 +955,7 @@ export default function FocusClient() {
                   </p>
                   <button
                     type="button"
-                    onClick={() => {
-                      setBreakRunning(false);
-                      setBreakSeconds(0);
-                    }}
+                    onClick={finishBreak}
                     className="mt-4 rounded-xl border border-sky-500/40 px-4 py-2 text-sm font-medium text-sky-100 hover:bg-sky-500/10"
                   >
                     End break
@@ -899,7 +974,12 @@ export default function FocusClient() {
                   <button
                     type="button"
                     onClick={handlePauseResume}
-                    disabled={authLoading || endingSession}
+                    disabled={
+                      authLoading ||
+                      endingSession ||
+                      showBreakPrompt ||
+                      breakSeconds > 0
+                    }
                     className="
                       rounded-xl
                       bg-blue-500
@@ -1012,7 +1092,7 @@ export default function FocusClient() {
                     <div className="mt-5 border-t border-emerald-500/20 pt-5">
                       <p className="text-sm text-slate-300">Take a break before your next step?</p>
                       <div className="mt-3 flex flex-wrap justify-center gap-2">
-                        {BREAK_OPTIONS_MINUTES.map((minutes) => (
+                        {POST_SESSION_BREAK_OPTIONS_MINUTES.map((minutes) => (
                           <button
                             key={minutes}
                             type="button"
