@@ -2,6 +2,21 @@
 
 All notable changes to OneStep are documented in this file. Release notes describe repository history; they are not a claim that a particular deployment received every change.
 
+## [1.2.3] - 2026-11-09
+
+### Added
+
+- Added Capacitor-based Android and iOS emulator previews, with platform setup/run scripts and an HTML entry point for the native shell.
+- Added Playwright mobile-layout checks for Android Chromium and iOS WebKit, plus policy tests for OTP-secret validation and rolling-window rate limits.
+
+### Changed
+
+- Refined the responsive application experience across authentication, dashboard, focus, history, mood, settings, and legal pages.
+- Expanded focus-session handling for long durations, hourly break prompts, and recovery, and updated the dashboard and history views to reflect session state.
+- Hardened authentication flows: require a dedicated OTP secret, use transactional Firestore-backed rate limits and OTP resend cooldowns, recover cleanly from email/session failures, and report logout-cookie failures instead of silently signing out.
+- Restricted service-worker caching to public static assets and prevented navigation/API responses from being cached; account exports are marked `no-store`.
+- Updated application dependencies and the package lockfile.
+
 ## [1.2.2] - 2026-10-13
 
 ### Fixed
@@ -78,6 +93,7 @@ All notable changes to OneStep are documented in this file. Release notes descri
 
 | Version | Date | Release focus |
 | --- | --- | --- |
+| 1.2.3 | 2026-11-09 | Mobile emulator previews, mobile checks, focus-flow refinements, and authentication/security hardening |
 | 1.2.2 | 2026-10-13 | Focus break-duration state typing fix |
 | 1.2.0 | 2026-08-29 | Update prompt and version bump |
 | 1.1.0 | 2026-08-08 | Account settings, export, deletion, and focus-session states |
