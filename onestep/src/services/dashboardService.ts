@@ -14,17 +14,6 @@ type FirestoreTimestampLike = {
 
 type FirestoreData = Record<string, unknown>;
 
-const moodEmojiMap: Record<string, string> = {
-  tired: "😴",
-  stressed: "🌧️",
-  okay: "🤍",
-  good: "🙂",
-  better: "🌿",
-  proud: "🌱",
-  calm: "😌",
-  same: "🤍",
-};
-
 function getDateValue(value: unknown): Date | null {
   if (
     value &&
@@ -110,10 +99,9 @@ export async function getDashboardStats(userId: string): Promise<DashboardStats>
           getStringValue(latestMoodData.moodLabel) ||
           getStringValue(latestMoodData.mood) ||
           "Mood checked in",
-        emoji:
-          moodEmojiMap[getStringValue(latestMoodData.mood)] ||
-          moodEmojiMap[getStringValue(latestMoodData.moodLabel).toLowerCase()] ||
-          "🌿",
+        moodId:
+          getStringValue(latestMoodData.mood) ||
+          getStringValue(latestMoodData.moodLabel).toLowerCase(),
         phase: latestMoodPhase,
       }
     : null;

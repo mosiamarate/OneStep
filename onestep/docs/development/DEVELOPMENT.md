@@ -22,7 +22,12 @@ See [ENVIRONMENT_VARIABLES.md](../deployment/ENVIRONMENT_VARIABLES.md) for the a
 | `npm run build` | Creates a production Next.js build |
 | `npm start` | Starts the production server after a build |
 | `npm run lint` | Runs ESLint |
-| `npx playwright test` | Runs the configured Playwright suite; no npm test script exists |
+| `npx playwright test` | Runs the configured Playwright suite |
+| `npm run test:android` | Runs mobile UI checks with the Pixel 7 Chromium profile |
+| `npm run test:ios` | Runs mobile UI checks with the iPhone 15 WebKit profile |
+| `npm run dev:mobile` | Serves Next.js on the local network for native emulator previews |
+| `npm run native:add:android` / `npm run native:add:ios` | Generates a Capacitor platform project once |
+| `npm run native:android` / `npm run native:ios` | Syncs and launches the app in the native platform emulator |
 
 ## Application boundaries in local work
 

@@ -10,6 +10,7 @@ export default function Input({
     <input
       className={`
         w-full
+        min-h-12
         bg-slate-950/50
         border
         border-slate-700
@@ -18,9 +19,11 @@ export default function Input({
         py-3
         text-white
         placeholder:text-slate-500
-        focus:border-blue-500
+        focus:border-blue-400
         focus:outline-none
-        transition
+        focus-visible:ring-2
+        focus-visible:ring-blue-400/40
+        transition-colors
         ${className}
       `}
       {...props}

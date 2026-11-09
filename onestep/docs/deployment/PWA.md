@@ -11,19 +11,20 @@
 
 ## Service-worker cache policy
 
-`public/sw.js` uses cache name `onestep-cache-v1`.
+`public/sw.js` uses cache name `onestep-cache-v2`.
 
 1. Install pre-caches `/`, `/auth/login`, and `/auth/signup`.
 2. Activate removes caches with a different name and claims clients.
-3. For same-origin `GET` requests, the worker attempts the network first, unconditionally puts a clone of the response in Cache Storage, and returns that response.
-4. On network failure, it returns a matching cached response or the cached `/` response.
+3. Navigations use the network and fall back only to a precached public shell page; navigation responses are not added to Cache Storage.
+4. Only same-origin static font, image, script, and style assets under `/_next/static/`, `/icons/`, and `/sounds/` are cacheable. API paths and requests with an `Authorization` header are excluded.
+5. On static-asset network failure, it returns a matching cached asset or a network error. Authenticated/API responses are never used as the offline fallback.
 
-This is not an offline-first implementation and does not deliberately cache all assets ahead of time. A successful response must first have been requested while online.
+This is not an offline-first implementation and does not deliberately cache all assets ahead of time. A successful public static response must first have been requested while online.
 
 ## Current risks and limits
 
-- The worker does not exclude authenticated pages, API responses, or the JSON export route. A same-origin GET response can therefore be written to Cache Storage, subject to browser caching rules. This should be reviewed before treating browser storage as free of personal data.
-- Cache invalidation is manual through the hard-coded cache name. Changing application files without changing the cache name can leave prior runtime entries available until normal replacement/clearing behavior.
+- Dynamic pages and API responses are deliberately not cached. The JSON export endpoint also returns `Cache-Control: no-store`.
+- Cache invalidation is manual through the hard-coded cache name. Cache name was incremented to v2 so older runtime entries are removed on activation.
 - The worker does not implement background sync, offline writes, push events, notification events, or a precache manifest.
 - The install prompt is browser-dependent and cannot be forced; iOS does not expose the same prompt event.
 - The update prompt checks `/api/app-version` every five minutes and offers a page reload when its bundled version differs. It does not itself update the service-worker cache name.

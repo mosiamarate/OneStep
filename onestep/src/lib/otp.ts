@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHash, randomInt, timingSafeEqual } from "crypto";
 import { Timestamp } from "firebase-admin/firestore";
+import { requireOtpSecret } from "./otpPolicy";
 
 const OTP_LENGTH = 6;
 export const OTP_EXPIRY_MINUTES = 10;
@@ -17,12 +18,7 @@ export const OTP_PURPOSES = {
 export type OtpPurpose = (typeof OTP_PURPOSES)[keyof typeof OTP_PURPOSES];
 
 function getOtpSecret() {
-  return (
-    process.env.OTP_SECRET ||
-    process.env.FIREBASE_PRIVATE_KEY ||
-    process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
-    "onestep"
-  );
+  return requireOtpSecret(process.env.OTP_SECRET);
 }
 
 export function generateOtp() {

@@ -14,9 +14,11 @@ export default function AuthCard({
         backdrop-blur-xl
         border
         border-slate-800
-        rounded-3xl
-        p-8
+        rounded-2xl
+        p-5
         shadow-2xl
+        sm:rounded-3xl
+        sm:p-8
       "
     >
       {children}

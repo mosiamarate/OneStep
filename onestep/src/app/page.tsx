@@ -1,267 +1,189 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ArrowDown, ArrowRight, Check, Clock3, Leaf } from "lucide-react";
+
 import Footer from "../components/layout/Footer";
-import icon from "@/public/icons/icon-2000x2000.png"
+import MoodIcon from "../components/ui/MoodIcon";
+import "./page.css";
+
+const steps = [
+  {
+    number: "01",
+    title: "Check in",
+    description:
+      "Take a moment to notice how you feel. There’s no right answer and no pressure to change it.",
+  },
+  {
+    number: "02",
+    title: "Choose one thing",
+    description:
+      "Name the next task that feels manageable. Leave the rest of the list for later.",
+  },
+  {
+    number: "03",
+    title: "Find your focus",
+    description:
+      "Set a pace that works for you, settle in, and give this one thing your attention.",
+  },
+];
 
 export default function LandingPage() {
   return (
-    <main
-      className="
-        min-h-screen
-        .bg-gradient-to-b {
-        --tw-gradient-position: to bottom in oklab;
-        background-image: linear-gradient(var(--tw-gradient-stops));}
-        from-slate-950
-        via-slate-900
-        to-slate-950
-        text-white
-      "
-    >
-      <div className="flex min-h-screen flex-col">
-        <section className="relative flex flex-1 items-center justify-center overflow-hidden px-4 py-16">
-          <div className="pointer-events-none absolute -top-32 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-blue-500/10 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-32 right-0 h-80 w-80 rounded-full bg-emerald-500/10 blur-3xl" />
+    <main className="landing-page">
+      <header className="landing-header">
+        <Link className="landing-brand" href="/" aria-label="OneStep home">
+          <Image
+            src="/icons/icon-web.webp"
+            alt=""
+            width={40}
+            height={40}
+            priority
+          />
+          <span>OneStep</span>
+        </Link>
 
-          <div className="relative z-10 mx-auto w-full max-w-5xl text-center">
-            <div className="mb-6">
-              <Image
-                src={icon}
-                alt="OneStep logo"
-                width={70}
-                height={70}
-                className="mx-auto rounded-lg"
-              />
-            </div>
+        <nav className="landing-nav" aria-label="Main navigation">
+          <Link className="landing-nav-link" href="#how-it-works">
+            How it works
+          </Link>
+          <Link className="landing-nav-link" href="/auth/login">
+            Log in
+          </Link>
+          <Link className="landing-nav-cta" href="/auth/signup">
+            Create an account <ArrowRight aria-hidden="true" size={16} />
+          </Link>
+        </nav>
+      </header>
 
-            <p className="mb-4 text-sm font-medium tracking-[0.35em] text-blue-400">
-              OneStep
-            </p>
-
-            <h1 className="mx-auto max-w-4xl text-5xl font-semibold tracking-tight text-white md:text-7xl">
-              Slow down, relax, and focus on one task at a time.
-            </h1>
-
-            <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-slate-400">
-              OneStep helps students and young professionals check in with how
-              they feel, choose one small task, and begin a gentle focus session.
-            </p>
-
-            <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Link
-                href="/auth/signup"
-                className="
-                  rounded-xl
-                  bg-blue-500
-                  px-8
-                  py-4
-                  font-medium
-                  text-white
-                  transition
-                  hover:bg-blue-600
-                  active:scale-[0.98]
-                "
-              >
-                Get Started
-              </Link>
-
-              <Link
-                href="/auth/login"
-                className="
-                  rounded-xl
-                  border
-                  border-slate-700
-                  px-8
-                  py-4
-                  font-medium
-                  text-slate-300
-                  transition
-                  hover:border-slate-600
-                  hover:text-white
-                  active:scale-[0.98]
-                "
-              >
-                I already have an account
-              </Link>
-            </div>
-
-            <div className="mx-auto mt-14 grid max-w-4xl gap-4 md:grid-cols-3">
-              <FeatureCard
-                title="Check in first"
-                text="Start by noticing how you feel before jumping into tasks."
-              />
-
-              <FeatureCard
-                title="Choose one task"
-                text="Avoid overwhelming lists. Pick one clear thing to focus on."
-              />
-
-              <FeatureCard
-                title="Focus gently"
-                text="Set a timer that matches your energy and make calm progress."
-              />
-            </div>
-          </div>
-        </section>
-
-        <section className="mx-auto mt-24 max-w-6xl px-6">
-          <div className="rounded-3xl border border-slate-800 bg-slate-900/40 p-10 backdrop-blur-sm">
-
-            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-blue-400">
-              What is OneStep?
-            </p>
-
-            <h2 className="mb-6 text-4xl font-bold text-white">
-              Productivity without pressure.
-            </h2>
-
-            <div className="space-y-6 text-lg leading-8 text-slate-300">
-
-              <p>
-                OneStep is a mindful productivity app designed to help students,
-                professionals, and anyone feeling overwhelmed slow down and focus on
-                what matters most.
-              </p>
-
-              <p>
-                Instead of encouraging long task lists and constant productivity,
-                OneStep guides you through a simple routine that supports both your
-                mental wellbeing and your ability to focus.
-              </p>
-
-              <p>
-                Every session begins with a short emotional check-in, followed by one
-                meaningful task, a distraction-free focus timer, and a brief reflection
-                to help you understand how your focus affects your mood over time.
-              </p>
-
-            </div>
-          </div>
-        </section>
-
-        <section className="mx-auto mt-24 mb-24 max-w-6xl px-6">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-blue-400">
-              How It Works
+      <section className="landing-hero" aria-labelledby="landing-title">
+        <div className="landing-hero-copy">
+          <h1 id="landing-title">
+            Slow down, relax, and focus on one task at a time.
+          </h1>
+          <p className="landing-intro">
+            When everything feels like a lot, start smaller. Check in with
+            yourself, choose one next step, and focus at your own pace.
           </p>
 
-          <h2 className="mb-10 text-4xl font-bold text-white">
-              Five simple steps to calm productivity.
-          </h2>
-
-          <div className="grid gap-6 md:grid-cols-5">
-
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6">
-
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/20 text-xl font-bold text-blue-300">
-                      1
-                  </div>
-
-                  <h3 className="mb-2 text-xl font-semibold text-white">
-                      Check In
-                  </h3>
-
-                  <p className="text-slate-400">
-                      Tell OneStep how you&apos;re feeling before starting your work.
-                  </p>
-
-              </div>
-
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6">
-
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/20 text-xl font-bold text-blue-300">
-                      2
-                  </div>
-
-                  <h3 className="mb-2 text-xl font-semibold text-white">
-                      Choose One Task
-                  </h3>
-
-                  <p className="text-slate-400">
-                      Pick one meaningful task instead of a long overwhelming list.
-                  </p>
-
-              </div>
-
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6">
-
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/20 text-xl font-bold text-blue-300">
-                      3
-                  </div>
-
-                  <h3 className="mb-2 text-xl font-semibold text-white">
-                      Focus
-                  </h3>
-
-                  <p className="text-slate-400">
-                      Start your timer and work without distractions.
-                  </p>
-
-              </div>
-
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6">
-
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/20 text-xl font-bold text-blue-300">
-                      4
-                  </div>
-
-                  <h3 className="mb-2 text-xl font-semibold text-white">
-                      Reflect
-                  </h3>
-
-                  <p className="text-slate-400">
-                      After each session, record how you feel and notice patterns.
-                  </p>
-
-              </div>
-
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6">
-
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/20 text-xl font-bold text-blue-300">
-                      5
-                  </div>
-
-                  <h3 className="mb-2 text-xl font-semibold text-white">
-                      Grow
-                  </h3>
-
-                  <p className="text-slate-400">
-                      View your history and celebrate consistent, gentle progress.
-                  </p>
-
-              </div>
-
+          <div className="landing-actions">
+            <Link className="landing-primary-action" href="/auth/signup">
+              Get Started <ArrowRight aria-hidden="true" size={18} />
+            </Link>
+            <Link className="landing-secondary-action" href="/auth/login">
+              I already have an account
+            </Link>
           </div>
+
+          <p className="landing-reassurance">
+            A simple routine for making a little progress, without the pressure.
+          </p>
+        </div>
+
+        <aside
+          className="landing-preview"
+          aria-label="Example of a OneStep focus session"
+        >
+          <div className="preview-window">
+            <div className="preview-topbar">
+              <span className="preview-dots" aria-hidden="true">
+                <i />
+                <i />
+                <i />
+              </span>
+              <span>YOUR NEXT STEP</span>
+              <span className="preview-day">A sample session</span>
+            </div>
+
+            <div className="preview-content">
+              <div className="preview-greeting">
+                <div>
+                  <p className="preview-kicker">A moment for yourself</p>
+                  <h2>Start where you are.</h2>
+                </div>
+                <span className="preview-leaf">
+                  <Leaf aria-hidden="true" size={19} />
+                </span>
+              </div>
+
+              <div className="preview-checkin">
+                <span className="preview-checkin-label">Today, I feel</span>
+                <span className="preview-mood">
+                  <MoodIcon mood="tired" size={15} className="text-blue-300" />
+                  A little tired
+                </span>
+              </div>
+
+              <div className="preview-task">
+                <div className="preview-task-icon">
+                  <Check aria-hidden="true" size={17} />
+                </div>
+                <div className="preview-task-copy">
+                  <span className="preview-checkin-label">ONE THING TO FOCUS ON</span>
+                  <p>Review my notes for 25 minutes</p>
+                </div>
+              </div>
+
+              <div className="preview-timer">
+                <div className="preview-timer-heading">
+                  <span>
+                    <Clock3 aria-hidden="true" size={15} /> Focus time
+                  </span>
+                  <span>Take it at your pace</span>
+                </div>
+                <div className="preview-timer-track" aria-hidden="true">
+                  <span />
+                </div>
+                <div className="preview-timer-time">25:00</div>
+                <p>One thing at a time.</p>
+              </div>
+            </div>
+          </div>
+        </aside>
       </section>
 
-        <Footer />
-      </div>
+      <a className="landing-scroll-cue" href="#how-it-works">
+        A gentler way to get started <ArrowDown aria-hidden="true" size={16} />
+      </a>
+
+      <section
+        className="landing-how"
+        id="how-it-works"
+        aria-labelledby="how-title"
+      >
+        <div className="landing-section-heading">
+          <p className="landing-eyebrow">Small steps count</p>
+          <h2 id="how-title">A calmer way to get things done.</h2>
+          <p>
+            OneStep helps you move from feeling overwhelmed to finding a
+            manageable place to begin.
+          </p>
+        </div>
+
+        <ol className="landing-steps">
+          {steps.map((step) => (
+            <li className="landing-step" key={step.number}>
+              <span className="landing-step-number">{step.number}</span>
+              <h3>{step.title}</h3>
+              <p>{step.description}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section className="landing-closing" aria-labelledby="closing-title">
+        <div>
+          <p className="landing-eyebrow">You can begin right here</p>
+          <h2 id="closing-title">One small step is enough.</h2>
+          <p>
+            Make a little space for yourself and decide what comes next.
+          </p>
+        </div>
+        <Link className="landing-primary-action" href="/auth/signup">
+          Create your account <ArrowRight aria-hidden="true" size={18} />
+        </Link>
+      </section>
+
+      <Footer />
     </main>
-  );
-}
-
-function FeatureCard({
-  title,
-  text,
-}: {
-  title: string;
-  text: string;
-}) {
-  return (
-    <div
-      className="
-        rounded-2xl
-        border
-        border-slate-800
-        bg-slate-900/60
-        p-5
-        text-left
-        backdrop-blur-xl
-      "
-    >
-      <h2 className="font-semibold text-white">{title}</h2>
-
-      <p className="mt-2 text-sm leading-relaxed text-slate-400">
-        {text}
-      </p>
-    </div>
   );
 }

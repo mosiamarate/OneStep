@@ -13,7 +13,7 @@ The source files, package manifest, GitHub workflow, and existing history are th
 - [Deployment](deployment/DEPLOYMENT.md): deployable configuration, environment variables, PWA behavior, and recovery limits.
 - [Operations](operations/INCIDENT_RESPONSE.md): operational runbooks based on what is and is not configured.
 - [Product](product/PRODUCT_OVERVIEW.md): actual features and flows.
-- [Audits](audits/PRODUCTION_READINESS.md): source-level readiness, security, accessibility, and performance assessments.
+- [Audits](audits/PRODUCTION_READINESS.md): source-level readiness, authentication, security, accessibility, and performance assessments. See [Authentication audit](audits/AUTHENTICATION_AUDIT.md) for the Phase 1 review and changes.
 
 ## Source-of-truth rules
 

@@ -7,6 +7,7 @@ import Link from "next/link";
 import ProtectedRoute from "../../components/auth/ProtectedRoute";
 import Footer from "../../components/layout/Footer";
 import InstallAppButton from "../../components/pwa/InstallAppButton";
+import MoodIcon from "../../components/ui/MoodIcon";
 import { logoutUser } from "../../lib/auth";
 import { useAuth } from "../../hooks/useAuth";
 import { useUserProfile } from "../../hooks/useUserProfile";
@@ -49,6 +50,7 @@ export default function DashboardPage() {
   const [statsLoading, setStatsLoading] = useState(true);
   const [statsError, setStatsError] = useState("");
   const [recoveryBusy, setRecoveryBusy] = useState(false);
+  const [logoutError, setLogoutError] = useState("");
 
   const displayName =
     getFirstName(profile?.fullName) ||
@@ -93,7 +95,16 @@ export default function DashboardPage() {
   }, [user]);
 
   const handleLogout = async () => {
-    await logoutUser();
+    setLogoutError("");
+    try {
+      await logoutUser();
+    } catch (error) {
+      setLogoutError(
+        error instanceof Error
+          ? error.message
+          : "We couldn’t confirm that your secure session ended. Please try again."
+      );
+    }
   };
 
   const unfinishedSession = stats.unfinishedSession;
@@ -141,24 +152,23 @@ export default function DashboardPage() {
           relative
           min-h-screen
           overflow-hidden
-          .bg-gradient-to-b {
-          --tw-gradient-position: to bottom in oklab;
-          background-image: linear-gradient(var(--tw-gradient-stops));
-          }
+          bg-linear-to-b
           from-slate-950
           via-slate-900
           to-slate-950
           px-4
           py-8
+          pt-[max(2rem,calc(env(safe-area-inset-top)_+_1rem))]
+          sm:pt-8
           text-white
         "
       >
         <div className="pointer-events-none absolute -top-32 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-blue-500/10 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-32 right-0 h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl" />
 
-        <section className="relative z-10 mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-6xl flex-col">
-          <header className="mb-10 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
+        <section className="relative z-10 mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-6xl flex-col">
+          <header className="mb-6 flex flex-wrap items-center justify-between gap-3 sm:mb-10 sm:gap-4">
+            <div className="flex shrink-0 items-center gap-3">
               <Image
                 src="/icons/icon-192x192.png"
                 alt="OneStep logo"
@@ -172,7 +182,7 @@ export default function DashboardPage() {
               </span>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="ml-auto flex shrink-0 items-center gap-3">
               <Link
                 href="/settings/profile"
                 className="
@@ -217,6 +227,15 @@ export default function DashboardPage() {
             </div>
           </header>
 
+          {logoutError && (
+            <div
+              role="alert"
+              className="mb-6 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400"
+            >
+              {logoutError}
+            </div>
+          )}
+
           <div className="grid flex-1 gap-6 lg:grid-cols-[1.25fr_0.75fr]">
             <section
               className="
@@ -224,9 +243,10 @@ export default function DashboardPage() {
                 border
                 border-slate-800
                 bg-slate-900/70
-                p-6
+                p-4
                 shadow-2xl
                 backdrop-blur-xl
+                sm:p-6
                 md:p-8
               "
             >
@@ -333,7 +353,7 @@ export default function DashboardPage() {
               </div>
               )}
 
-              <div className="mt-8 rounded-2xl border border-blue-500/20 bg-blue-500/10 p-6">
+              <div className="mt-6 rounded-2xl border border-blue-500/20 bg-blue-500/10 p-4 sm:mt-8 sm:p-6">
                 <p className="text-sm font-medium uppercase tracking-[0.2em] text-blue-300">Your next step</p>
                 <h2 className="mt-2 wrap-break-word text-xl font-semibold text-white">
                   {statsLoading ? "Loading..." : stats.activeTask?.title || "What would you like to focus on?"}
@@ -347,11 +367,18 @@ export default function DashboardPage() {
                 <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-5">
                   <p className="text-sm text-slate-500">Today’s mood</p>
 
-                  <p className="mt-3 text-2xl font-semibold text-white">
+                  <p className="mt-3 flex items-center gap-2 text-2xl font-semibold text-white">
                     {statsLoading
                       ? "..."
                       : stats.latestMood
-                      ? `${stats.latestMood.emoji} ${stats.latestMood.label}`
+                      ? <>
+                          <MoodIcon
+                            mood={stats.latestMood.moodId}
+                            size={22}
+                            className="shrink-0 text-blue-300"
+                          />
+                          {stats.latestMood.label}
+                        </>
                       : "Not checked in yet"}
                   </p>
                 </div>
@@ -415,9 +442,10 @@ export default function DashboardPage() {
                   border
                   border-slate-800
                   bg-slate-900/70
-                  p-6
+                  p-4
                   shadow-2xl
                   backdrop-blur-xl
+                  sm:p-6
                 "
               >
                 <h2 className="text-xl font-semibold text-white">
@@ -469,9 +497,10 @@ export default function DashboardPage() {
                   border
                   border-slate-800
                   bg-slate-900/70
-                  p-6
+                  p-4
                   shadow-2xl
                   backdrop-blur-xl
+                  sm:p-6
                 "
               >
                 <h2 className="text-xl font-semibold text-white">

@@ -1,4 +1,5 @@
 import type { MoodOption } from "../../constants/moods";
+import MoodIcon from "../ui/MoodIcon";
 
 interface MoodCardProps {
   mood: MoodOption;
@@ -39,7 +40,9 @@ export default function MoodCard({
       `}
     >
       <div className="mb-4 flex items-center justify-between">
-        <span className="text-4xl">{mood.emoji}</span>
+        <span className="grid h-12 w-12 place-items-center rounded-xl bg-blue-500/10 text-blue-300">
+          <MoodIcon mood={mood.id} size={26} />
+        </span>
 
         <span
           className={`

@@ -68,6 +68,7 @@ export default function UpdateAvailablePrompt() {
         flex
         items-center
         justify-center
+        overflow-y-auto
         bg-slate-950/70
         px-4
         py-6
@@ -77,14 +78,17 @@ export default function UpdateAvailablePrompt() {
       <div
         className="
           w-full
+          max-h-[calc(100dvh-2rem)]
+          overflow-y-auto
           max-w-md
           rounded-3xl
           border
           border-slate-800
           bg-slate-900
-          p-6
+          p-4
           text-white
           shadow-2xl
+          sm:p-6
         "
       >
         <RefreshCw

@@ -12,7 +12,7 @@ Sign up
   -> /dashboard
 ```
 
-If the verification email cannot be sent after account creation, the user has an unverified account and must use the verification route/resend control. The server proxy redirects a session without the Firebase `email_verified` claim away from protected page routes.
+If verification-email delivery fails, the newly issued OTP is removed so the user can retry. If account creation succeeds but session setup fails, the UI explains that the account exists; the user can sign in and request verification. The server proxy redirects a session without the Firebase `email_verified` claim away from protected page routes.
 
 ## Google onboarding/login
 

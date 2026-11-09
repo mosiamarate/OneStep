@@ -119,8 +119,9 @@ export default function TermsPage() {
         <SectionHeading>5. Accounts and security</SectionHeading>
 
         <p className="mt-3">
-          You may need to create an account using an email address and password
-          or a supported sign-in provider such as Google.
+          You may need to create an account using an email address and password,
+          a supported sign-in provider such as Google, or a verified email
+          recovery flow.
         </p>
 
         <p className="mt-3">You agree to:</p>
@@ -129,6 +130,7 @@ export default function TermsPage() {
           <li>Provide accurate account information.</li>
           <li>Keep your account details reasonably current.</li>
           <li>Protect your password and access to your email account.</li>
+          <li>Complete verification and password-reset steps when requested.</li>
           <li>Not allow another person to misuse your account.</li>
           <li>Tell us if you become aware of unauthorised account access.</li>
         </BulletList>
@@ -148,7 +150,9 @@ export default function TermsPage() {
           <li>Use OneStep for unlawful, fraudulent, or abusive purposes.</li>
           <li>Attempt to access another user’s account or information.</li>
           <li>
-            Bypass, interfere with, probe, or weaken security controls.
+            Bypass, interfere with, probe, or weaken security controls,
+            including throttling, verification, session, or account-recovery
+            protections.
           </li>
           <li>
             Upload malicious software, scripts, automated attacks, or harmful
@@ -207,12 +211,14 @@ export default function TermsPage() {
 
         <p className="mt-3">
           OneStep depends on third-party services, including Google Firebase,
-          Google sign-in, and Vercel.
+          Google sign-in, Vercel, and Resend for transactional email delivery.
         </p>
 
         <p className="mt-3">
           Your use of certain features may also be subject to those providers’
-          terms and privacy practices.
+          terms and privacy practices, especially for authentication, email
+          verification, password resets, hosting, and delivery of security
+          messages.
         </p>
 
         <p className="mt-3">
@@ -243,7 +249,8 @@ export default function TermsPage() {
 
         <p className="mt-3">
           You may stop using OneStep at any time and may request deletion of
-          your account by contacting us.
+          your account, data export, or related account-management action by
+          contacting us.
         </p>
 
         <p className="mt-3">

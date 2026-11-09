@@ -9,9 +9,11 @@ import {
   serverTimestamp,
   updateDoc,
 } from "firebase/firestore";
+import { Sprout } from "lucide-react";
 
 import ProtectedRoute from "../../components/auth/ProtectedRoute";
 import Footer from "../../components/layout/Footer";
+import MoodIcon from "../ui/MoodIcon";
 import { useAuth } from "../../hooks/useAuth";
 import { db } from "../../lib/firebase";
 import {
@@ -41,32 +43,26 @@ interface WindowWithDocumentPictureInPicture extends Window {
 const afterSessionMoods = [
   {
     id: "better",
-    emoji: "🌿",
     label: "Better",
   },
   {
     id: "proud",
-    emoji: "🌱",
     label: "Proud",
   },
   {
     id: "calm",
-    emoji: "😌",
     label: "Calm",
   },
   {
     id: "tired",
-    emoji: "😴",
     label: "Tired",
   },
   {
     id: "same",
-    emoji: "🤍",
     label: "Same",
   },
   {
     id: "stressed",
-    emoji: "🌧️",
     label: "Still stressed",
   },
 ];
@@ -160,6 +156,7 @@ export default function FocusClient() {
   const [showBreakPrompt, setShowBreakPrompt] = useState(false);
   const [breakSeconds, setBreakSeconds] = useState(0);
   const [breakRunning, setBreakRunning] = useState(false);
+  const [showPostBreakPrompt, setShowPostBreakPrompt] = useState(false);
   const [nextBreakAtMinutes, setNextBreakAtMinutes] =
     useState(BREAK_INTERVAL_MINUTES);
   const [breakDurationMinutes, setBreakDurationMinutes] =
@@ -368,12 +365,16 @@ export default function FocusClient() {
     if (!breakRunning || breakSeconds > 0) return;
 
     setBreakRunning(false);
+    if (completed) {
+      setShowPostBreakPrompt(true);
+    }
     if (resumeFocusAfterBreak) {
       void resumeFocusTimer();
     }
   }, [
     breakRunning,
     breakSeconds,
+    completed,
     resumeFocusTimer,
     resumeFocusAfterBreak,
   ]);
@@ -529,6 +530,7 @@ export default function FocusClient() {
     setShowBreakPrompt(false);
     setBreakSeconds(0);
     setBreakRunning(false);
+    setShowPostBreakPrompt(false);
     setResumeFocusAfterBreak(false);
     setNextBreakAtMinutes(BREAK_INTERVAL_MINUTES);
   };
@@ -536,6 +538,7 @@ export default function FocusClient() {
   const startBreak = (minutes: number, resumeFocus = false) => {
     setBreakSeconds(minutes * 60);
     setBreakRunning(true);
+    setShowPostBreakPrompt(false);
     setResumeFocusAfterBreak(resumeFocus);
     setShowBreakPrompt(false);
   };
@@ -543,6 +546,9 @@ export default function FocusClient() {
   const finishBreak = () => {
     setBreakRunning(false);
     setBreakSeconds(0);
+    if (completed) {
+      setShowPostBreakPrompt(true);
+    }
     if (resumeFocusAfterBreak) {
       void resumeFocusTimer();
     }
@@ -821,28 +827,29 @@ export default function FocusClient() {
       <main
         className="
           relative
-          min-h-screen
+          min-h-dvh
           overflow-hidden
           bg-linear-to-b
           from-slate-950
           via-slate-900
           to-slate-950
           px-4
-          py-10
+          py-6
+          sm:py-10
           text-white
         "
       >
         <div className="pointer-events-none absolute -top-32 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-blue-500/10 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-32 right-0 h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl" />
 
-        <section className="relative z-10 mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-3xl items-center">
+        <section className="relative z-10 mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-3xl items-center sm:min-h-[calc(100vh-5rem)]">
           <div className="w-full">
-            <div className="mb-10 text-center">
+            <div className="mb-6 text-center sm:mb-10">
               <p className="mb-3 text-sm font-medium uppercase tracking-[0.3em] text-blue-400">
                 Focus Session
               </p>
 
-              <h1 className="mb-4 text-4xl font-semibold tracking-tight text-white md:text-5xl">
+              <h1 className="mb-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl md:text-5xl">
                 Focus gently.
               </h1>
 
@@ -858,14 +865,15 @@ export default function FocusClient() {
                 border
                 border-slate-800
                 bg-slate-900/70
-                p-6
+                p-4
                 text-center
                 shadow-2xl
                 backdrop-blur-xl
+                sm:p-6
                 md:p-8
               "
             >
-              <div className="mb-6 rounded-2xl border border-slate-800 bg-slate-950/50 p-5">
+              <div className="mb-5 rounded-2xl border border-slate-800 bg-slate-950/50 p-4 sm:mb-6 sm:p-5">
                 <p className="mb-2 text-sm font-medium uppercase tracking-[0.2em] text-slate-500">
                   Current Task
                 </p>
@@ -889,9 +897,9 @@ export default function FocusClient() {
                 </div>
               </div>
 
-              <div className="mb-8">
+              <div className="mb-6 sm:mb-8">
                 <p
-                  className="text-6xl font-bold tabular-nums tracking-tight text-white sm:text-7xl md:text-8xl"
+                  className="text-5xl font-bold tabular-nums tracking-tight text-white sm:text-7xl md:text-8xl"
                   aria-live="polite"
                   aria-label={`${formatTime(seconds)} remaining`}
                 >
@@ -1075,8 +1083,9 @@ export default function FocusClient() {
                       p-6
                     "
                   >
-                    <h2 className="mb-2 text-3xl font-semibold text-white">
-                      🌱 Well done.
+                    <h2 className="mb-2 flex items-center gap-2 text-3xl font-semibold text-white">
+                      <Sprout aria-hidden="true" className="text-emerald-300" size={28} />
+                      Well done.
                     </h2>
 
                     <p className="text-slate-300">
@@ -1103,10 +1112,25 @@ export default function FocusClient() {
                           </button>
                         ))}
                       </div>
+                      {showPostBreakPrompt && (
+                        <div className="mt-4 rounded-xl border border-emerald-500/30 bg-slate-950/40 p-4 text-center">
+                          <p className="text-sm font-medium text-emerald-100">
+                            Break complete. Ready to start another session?
+                          </p>
+                          <button
+                            type="button"
+                            onClick={handleStartAnotherSession}
+                            disabled={savingCompletion || savingReflection}
+                            className="mt-3 rounded-xl bg-blue-500 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            Start Another Session
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-6 text-left">
+                  <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4 text-left sm:p-6">
                     <div className="mb-5 text-center">
                       <h3 className="text-xl font-semibold text-white">
                         How do you feel after this session?
@@ -1118,7 +1142,7 @@ export default function FocusClient() {
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
                       {afterSessionMoods.map((mood) => {
                         const isSelected = afterMood === mood.id;
 
@@ -1147,8 +1171,8 @@ export default function FocusClient() {
                               }
                             `}
                           >
-                            <span className="block text-2xl">
-                              {mood.emoji}
+                            <span className="mx-auto grid h-8 w-8 place-items-center text-blue-300">
+                              <MoodIcon mood={mood.id} size={25} />
                             </span>
 
                             <span className="mt-2 block text-sm font-medium">
@@ -1196,25 +1220,27 @@ export default function FocusClient() {
                   </div>
 
                   <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-                    <button
-                      type="button"
-                      onClick={handleStartAnotherSession}
-                      disabled={savingCompletion || savingReflection}
-                      className="
-                        rounded-xl
-                        bg-blue-500
-                        px-6
-                        py-3
-                        font-medium
-                        text-white
-                        transition
-                        hover:bg-blue-600
-                        disabled:cursor-not-allowed
-                        disabled:opacity-50
-                      "
-                    >
-                      Start Another Session
-                    </button>
+                    {!showPostBreakPrompt && (
+                      <button
+                        type="button"
+                        onClick={handleStartAnotherSession}
+                        disabled={savingCompletion || savingReflection}
+                        className="
+                          rounded-xl
+                          bg-blue-500
+                          px-6
+                          py-3
+                          font-medium
+                          text-white
+                          transition
+                          hover:bg-blue-600
+                          disabled:cursor-not-allowed
+                          disabled:opacity-50
+                        "
+                      >
+                        Start Another Session
+                      </button>
+                    )}
 
                     <button
                       type="button"
@@ -1251,7 +1277,7 @@ export default function FocusClient() {
             aria-modal="true"
             aria-labelledby="end-session-title"
           >
-            <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-6 text-left">
+            <div className="my-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-md space-y-5 overflow-y-auto rounded-2xl border border-slate-800 bg-slate-900 p-4 text-left shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:space-y-6 sm:rounded-3xl sm:p-6">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.25em] text-blue-400">
                   Confirm Action

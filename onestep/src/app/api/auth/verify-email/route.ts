@@ -30,7 +30,7 @@ function getBearerToken(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const rateLimit = checkRateLimit(request, {
+  const rateLimit = await checkRateLimit(request, {
     ...RATE_LIMIT_PRESETS.STRICT,
     scope: "verify-email",
   });
@@ -135,20 +135,24 @@ export async function POST(request: NextRequest) {
     );
     await otpRef.delete();
 
+    let welcomeEmailSent = false;
     if (user.email) {
-      await sendWelcomeEmail(
-        user.email,
-        getDisplayName(user.displayName, user.email)
-      );
+      try {
+        await sendWelcomeEmail(
+          user.email,
+          getDisplayName(user.displayName, user.email)
+        );
+        welcomeEmailSent = true;
+      } catch {
+        console.error("Welcome email delivery failed after verification.");
+      }
     }
-    
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, welcomeEmailSent });
   } catch (error) {
     return NextResponse.json(
       { error: getPublicOtpError(error) },
       { status: 400 }
     );
   }
-  
 }

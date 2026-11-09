@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { FieldValue } from "firebase-admin/firestore";
 
 import { getDisplayName, getPublicOtpError, sendOtpEmail } from "../../../../lib/authEmail";
-import { adminAuth } from "../../../../lib/firebase-admin";
+import { adminAuth, adminDb } from "../../../../lib/firebase-admin";
 import { OTP_PURPOSES } from "../../../../lib/otp";
 import {
   checkRateLimit,
@@ -19,7 +20,7 @@ function getBearerToken(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const rateLimit = checkRateLimit(request, {
+  const rateLimit = await checkRateLimit(request, {
     ...RATE_LIMIT_PRESETS.AUTH,
     scope: "send-verification",
   });
@@ -45,6 +46,15 @@ export async function POST(request: NextRequest) {
     }
 
     if (user.emailVerified) {
+      await adminDb.collection("users").doc(user.uid).set(
+        {
+          emailOtpVerified: true,
+          emailVerified: true,
+          emailOtpVerifiedAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
       return NextResponse.json({ ok: true, alreadyVerified: true });
     }
 

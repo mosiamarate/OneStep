@@ -9,9 +9,9 @@ This document describes controls observable in the checked-in source. It is not 
 | Page access | `src/proxy.ts` verifies the Firebase Admin `onestep-session` cookie with revocation checking for protected page routes. The session lifetime is 24 hours. |
 | Privileged APIs | Session creation, email verification, export, and deletion derive `uid` from `adminAuth.verifyIdToken` rather than accepting a user ID parameter. |
 | Admin code | Firebase Admin and Resend modules are server-only imports. API routes using Admin export `runtime = "nodejs"`. |
-| OTP storage | Verification and reset codes are six digits, expire after 10 minutes, permit five recorded attempts, and are stored as SHA-256 hashes rather than raw codes. |
+| OTP storage | Verification and reset codes are six digits, expire after 10 minutes, permit five recorded attempts, and are stored as SHA-256 hashes rather than raw codes. Hashing requires a dedicated `OTP_SECRET` of at least 32 characters. |
 | OTP replay | Verification occurs in a Firestore transaction; valid codes are marked used and then deleted. |
-| Request throttling | API routes apply in-memory per-scope limits: authentication actions use 10 requests/minute and strict actions use 5 requests/10 minutes. |
+| Request throttling | API routes apply Firestore-transaction-backed per-scope rolling limits: authentication actions use 10 requests/minute and strict actions use 5 requests/10 minutes. Configure TTL on `apiRateLimits.expiresAt`. |
 | Account operations | Export and deletion require a bearer Firebase ID token. Deletion batches application documents by verified `uid` before deleting the Firebase Auth user. |
 | Browser headers | Next.js config sends `nosniff`, `strict-origin-when-cross-origin`, `DENY` framing, and a restrictive camera/microphone/geolocation permissions policy. |
 
@@ -23,11 +23,11 @@ The browser directly reads and writes user profile, task, mood, and focus-sessio
 
 ### Rate limits are local to a process
 
-`src/lib/rateLimit.ts` stores timestamps in a module-level `Map` and uses `x-real-ip` or the first `x-forwarded-for` value. Limits reset on cold start and do not coordinate across instances. They are useful route-level checks, not a distributed production-rate-limit guarantee.
+`src/lib/rateLimit.ts` uses Firestore transactions, so counters coordinate across server instances. It accepts a syntactically valid `x-real-ip` value; configure the hosting proxy to overwrite this header. Missing/invalid values share an `unknown` bucket. Firestore availability and the configured TTL policy are operational dependencies.
 
 ### OTP secret fallback is weak
 
-`OTP_SECRET` is preferred, but `src/lib/otp.ts` falls back to `FIREBASE_PRIVATE_KEY`, then a public Firebase project ID, then the literal `"onestep"`. A unique, high-entropy `OTP_SECRET` is required for a defensible deployment; source does not require it at startup.
+OTP generation and verification fail closed unless `OTP_SECRET` is configured with at least 32 characters. Use a unique, high-entropy server-only value.
 
 ### Client cookies are not an authorization boundary
 
@@ -42,7 +42,7 @@ The settings page requires `DELETE MY ACCOUNT` before it sends its request, but 
 - No Content Security Policy or HSTS is configured in `next.config.ts`.
 - No Firestore authorization tests, API authorization tests, dependency scan workflow, or security monitoring/alerting integration is tracked.
 - No automatic deletion of expired OTP documents is configured.
-- The service worker caches same-origin `GET` responses; see [PWA.md](../deployment/PWA.md) for the privacy and cache implications.
+- The service worker caches only public static assets; dynamic navigation and API responses are excluded, and the data-export endpoint sends `Cache-Control: no-store`. See [PWA.md](../deployment/PWA.md).
 - No independent penetration test, source-code audit, or compliance certification is evidenced.
 
 ## Security-relevant source locations

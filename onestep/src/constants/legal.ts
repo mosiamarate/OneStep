@@ -8,5 +8,5 @@ export const LEGAL_DETAILS = {
     contactEmail: "mosiamarate@gmail.com",
 
     country: "South Africa",
-    lastUpdated: "17 July 2026",
+    lastUpdated: "9 November 2026",
 } as const;

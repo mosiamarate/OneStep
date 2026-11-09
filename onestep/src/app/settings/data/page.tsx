@@ -70,7 +70,7 @@ export default function DataPrivacySettingsPage() {
         </p>
       </div>
 
-      <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-6 space-y-4">
+      <div className="space-y-4 rounded-2xl border border-slate-800 bg-slate-950/40 p-4 sm:p-6">
         <div className="flex items-start justify-between gap-4 flex-col sm:flex-row sm:items-center">
           <div>
             <h3 className="text-lg font-medium text-white">Export My Data</h3>
@@ -116,7 +116,7 @@ export default function DataPrivacySettingsPage() {
         )}
       </div>
 
-      <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-6 space-y-3">
+      <div className="space-y-3 rounded-2xl border border-slate-800 bg-slate-950/40 p-4 sm:p-6">
         <h3 className="text-md font-medium text-white">GDPR & Data Ownership</h3>
         <p className="text-xs text-slate-400 leading-relaxed">
           At OneStep, we respect your right to privacy and control over your personal information.

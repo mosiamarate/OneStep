@@ -9,6 +9,7 @@
 | Tasks, moods, focus sessions, OTPs | Matching records are queried by verified UID and deleted in recursive batches of 100 |
 | Used OTP | Deleted after a successful verification or reset flow |
 | Expired/unused OTP | Code rejects expired values, but no checked-in TTL policy, scheduled cleanup, or background job removes the record automatically |
+| API rate limits | Firestore stores rolling timestamps under scope/IP-derived document IDs; configure TTL on `apiRateLimits.expiresAt`. Actual TTL deployment is not verifiable from source. |
 | User export | Generated on demand as an HTTP attachment; no export archive is written by the route |
 | Session cookie | Server cookie has a 24-hour maximum age; client UI-hint cookies have a seven-day maximum age |
 | Completion-sound preference | Stored in browser local storage until the user/browser removes it |

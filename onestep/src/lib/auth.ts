@@ -7,7 +7,7 @@ import {
   signOut,
   updateProfile,
 } from "firebase/auth";
-import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 
 import { auth, db, googleProvider } from "../lib/firebase";
 import {
@@ -34,11 +34,13 @@ export async function loginUser(email: string, password: string) {
     password
   );
 
-  const profileSnap = await getDoc(doc(db, "users", userCredential.user.uid));
-  const isEmailVerified =
-    profileSnap.exists() && profileSnap.data().emailOtpVerified === true;
-  await establishAuthSession(userCredential.user);
-  setAuthCookie(true, isEmailVerified);
+  try {
+    await establishAuthSession(userCredential.user);
+  } catch (error) {
+    await signOut(auth);
+    throw error;
+  }
+  setAuthCookie(true, userCredential.user.emailVerified);
 
   return userCredential;
 }
@@ -67,11 +69,24 @@ export async function signupUser(
       updatedAt: serverTimestamp(),
     });
   } catch (error) {
-    await userCredential.user.delete().catch(() => undefined);
+    try {
+      await userCredential.user.delete();
+    } catch {
+      throw new Error(
+        "Your account was created, but profile setup did not finish. Please sign in to continue."
+      );
+    }
     throw error;
   }
 
-  await establishAuthSession(userCredential.user);
+  try {
+    await establishAuthSession(userCredential.user);
+  } catch {
+    await signOut(auth);
+    throw new Error(
+      "Your account was created, but we couldn’t start a secure session. Please sign in to continue."
+    );
+  }
   setAuthCookie(true, false);
 
   return userCredential;
@@ -96,7 +111,12 @@ export async function loginWithGoogle() {
     { merge: true }
   );
 
-  await establishAuthSession(result.user);
+  try {
+    await establishAuthSession(result.user);
+  } catch (error) {
+    await signOut(auth);
+    throw error;
+  }
   setAuthCookie(true, true);
 
   return result;
@@ -122,21 +142,41 @@ export async function signupWithGoogle() {
     { merge: true }
   );
 
-  await establishAuthSession(result.user);
+  try {
+    await establishAuthSession(result.user);
+  } catch (error) {
+    await signOut(auth);
+    throw error;
+  }
   setAuthCookie(true, true);
 
   return result;
 }
 
 export async function logoutUser() {
-  await fetch("/api/auth/session", { method: "DELETE" }).catch(() => undefined);
-  await signOut(auth);
-  clearAuthCookies();
+  let response: Response;
+  try {
+    response = await fetch("/api/auth/session", { method: "DELETE" });
+  } catch {
+    throw new Error(
+      "We couldn’t reach the server to end your secure session. You are still signed in; please try again."
+    );
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      "We couldn’t confirm that your secure session ended. You are still signed in; please try again."
+    );
+  }
+
+  try {
+    await signOut(auth);
+  } finally {
+    clearAuthCookies();
+  }
 }
 
 export function getAuthErrorMessage(error: unknown) {
-  console.error("Firebase Auth Error:", error);
-
   if (error instanceof FirebaseError) {
     switch (error.code) {
       case "auth/invalid-email":
@@ -193,4 +233,3 @@ export function getAuthErrorMessage(error: unknown) {
 
   return "Something went wrong. Please try again.";
 }
-

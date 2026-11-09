@@ -1,16 +1,26 @@
 {
   "name": "onestep",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:android": "playwright test tests/mobile-ui.spec.ts --project=android",
+    "test:ios": "playwright test tests/mobile-ui.spec.ts --project=ios",
+    "dev:mobile": "next dev --hostname 0.0.0.0",
+    "native:add:android": "cross-env CAPACITOR_SERVER_URL=http://10.0.2.2:3000 cap add android",
+    "native:add:ios": "cross-env CAPACITOR_SERVER_URL=http://localhost:3000 cap add ios",
+    "native:android": "cross-env CAPACITOR_SERVER_URL=http://10.0.2.2:3000 cap run android",
+    "native:ios": "cross-env CAPACITOR_SERVER_URL=http://localhost:3000 cap run ios"
   },
   "dependencies": {
     "@react-email/components": "^1.0.12",
     "@vercel/analytics": "^1.1.4",
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/ios": "^8.6.0",
     "firebase": "^12.10.0",
     "firebase-admin": "^14.2.0",
     "lucide-react": "^1.33.0",
@@ -23,11 +33,13 @@
     "server-only": "^0.0.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.6.0",
     "@playwright/test": "^1.64.0",
     "@tailwindcss/postcss": "^4.3.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "cross-env": "^10.1.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4.3.1",

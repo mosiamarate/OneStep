@@ -11,7 +11,8 @@ export const metadata: Metadata = {
     default: "OneStep",
     template: "%s | OneStep",
   },
-  description: "Slow down, relax, and focus on one task at a time.",
+  description:
+    "A calmer way to check in, choose one task, and focus at your own pace.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,

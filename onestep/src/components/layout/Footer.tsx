@@ -4,7 +4,7 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="relative z-10 mt-10 border-t border-slate-800/70 px-4 py-6">
+    <footer className="relative z-10 mt-8 border-t border-slate-800/70 px-4 py-5 sm:mt-10 sm:py-6">
       <div
         className="
           mx-auto
@@ -14,9 +14,10 @@ export default function Footer() {
           flex-col
           items-center
           justify-between
-          gap-4
+          gap-3
           text-center
           sm:flex-row
+          sm:gap-4
         "
       >
         <p className="text-sm text-slate-500">
@@ -25,18 +26,18 @@ export default function Footer() {
 
         <nav
           aria-label="Legal links"
-          className="flex flex-wrap items-center justify-center gap-4"
+          className="flex flex-wrap items-center justify-center gap-2 sm:gap-4"
         >
           <Link
             href="/privacy"
-            className="text-sm text-slate-500 transition hover:text-slate-300"
+            className="inline-flex min-h-11 items-center text-sm text-slate-500 transition hover:text-slate-300"
           >
             OneStep Privacy
           </Link>
 
           <Link
             href="/terms"
-            className="text-sm text-slate-500 transition hover:text-slate-300"
+            className="inline-flex min-h-11 items-center text-sm text-slate-500 transition hover:text-slate-300"
           >
             OneStep Terms
           </Link>

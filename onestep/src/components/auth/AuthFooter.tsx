@@ -12,12 +12,15 @@ export default function AuthFooter({
   href,
 }: AuthFooterProps) {
   return (
-    <div className="text-center mt-6">
+    <div className="mt-6 text-center">
       <p className="text-slate-400 text-sm">
         {text}{" "}
         <Link
           href={href}
           className="
+            inline-flex
+            min-h-11
+            items-center
             text-blue-400
             hover:text-blue-300
             transition-colors

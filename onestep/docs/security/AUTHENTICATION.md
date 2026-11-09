@@ -9,8 +9,10 @@ Firebase Authentication is the identity provider. Firebase Web SDK code performs
 3. It exchanges the Firebase ID token at `POST /api/auth/session` for the 24-hour `onestep-session` cookie and sends UI-hint cookies.
 4. It calls `POST /api/auth/send-verification` with its bearer ID token.
 5. The handler verifies the token, creates/replaces `emailOtps/EMAIL_VERIFICATION_{uid}`, and sends a Resend email.
-6. `POST /api/auth/verify-email` transactionally validates the code, calls Firebase Admin `updateUser(..., { emailVerified: true })`, updates the profile flags, deletes the OTP document, and attempts to send a welcome email.
+6. `POST /api/auth/verify-email` transactionally validates the code, calls Firebase Admin `updateUser(..., { emailVerified: true })`, updates the profile flags, and deletes the OTP document. Welcome-email delivery is best-effort and cannot turn a committed verification into a failed response.
 7. The client refreshes its Firebase ID token and creates a new server session so the `email_verified` claim is available to the proxy.
+
+If a later verification request discovers that Firebase already considers the email verified, the resend handler reconciles the Firestore profile flag. The client refreshes the ID token/session and continues instead of becoming stuck on an already-used code.
 
 The resend and send/verify-OTP paths are aliases of the verification handlers. Only the two purposes described below are used by the UI.
 
@@ -31,19 +33,23 @@ This is a custom OTP reset flow. The app does not invoke Firebase's browser pass
 | Property | Code behavior |
 | --- | --- |
 | Format | Six numeric digits generated with Node `crypto.randomInt` |
-| Storage | SHA-256 hash of `uid`, purpose, OTP, and the configured fallback secret; no raw OTP field |
+| Storage | SHA-256 hash of `uid`, purpose, OTP, and required `OTP_SECRET` (minimum 32 characters); no raw OTP field |
 | Validity | 10 minutes |
 | Attempts | Five recorded failed attempts; a later request returns `429` and requires a new code |
-| Resend cooldown | 60 seconds, based on the prior OTP document's `createdAt` |
+| Resend cooldown | 60 seconds, checked transactionally against the prior OTP document |
 | Scope | One document per `purpose` and user; a new send overwrites the prior document after cooldown |
+| Delivery failure | A provider error removes the just-created OTP if it is still current, allowing a later retry |
+
+Auth and account API request limits use Firestore transactions in `apiRateLimits`, keyed by scope and valid `x-real-ip`. Configure a Firestore TTL policy on `expiresAt`; configure the hosting proxy to overwrite `x-real-ip`. Invalid/missing IP values use a shared `unknown` bucket.
 
 The `OTP_PURPOSES` type also contains `LOGIN_VERIFICATION` and `CHANGE_EMAIL`, but no current UI or route uses them.
 
 ## Sessions and route checks
 
 - `POST /api/auth/session` verifies an ID token and creates the `onestep-session` Firebase session cookie. It is `HttpOnly`, `SameSite=Lax`, path `/`, `Secure` only when `NODE_ENV === "production"`, and has a 24-hour maximum age.
-- `DELETE /api/auth/session` clears that server cookie. Client logout also calls Firebase `signOut` and clears the UI-hint cookies.
+- `DELETE /api/auth/session` clears that server cookie. Client logout does not sign out locally until the server confirms the cookie was cleared; on network/API failure it leaves the user signed in and reports that logout should be retried.
 - `src/proxy.ts` protects dashboard, focus, history, mood, task, and settings pages. It verifies the session cookie with `checkRevoked: true`, redirects unauthenticated requests to login, and redirects a session without `email_verified` to verification.
+- Client auth hints use Firebase Auth's `User.emailVerified` claim rather than Firestore profile state; they are not an authorization boundary.
 - `ProtectedRoute` performs a second client-side Firebase auth check and relies on the client-readable verification hint. Treat it as UI behavior, not server authorization.
 
 ## Account export and deletion

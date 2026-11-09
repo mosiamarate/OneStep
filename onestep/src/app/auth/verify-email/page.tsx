@@ -51,13 +51,34 @@ function VerifyEmailContent() {
     return data;
   };
 
+  const refreshSecureSession = async () => {
+    if (!user) throw new Error("You need to sign in again.");
+
+    const refreshedToken = await user.getIdToken(true);
+    const sessionResponse = await fetch("/api/auth/session", {
+      method: "POST",
+      headers: { authorization: `Bearer ${refreshedToken}` },
+    });
+    if (!sessionResponse.ok) {
+      throw new Error("Unable to refresh your secure session.");
+    }
+
+    setAuthCookie(true, true);
+  };
+
   const sendOtp = async () => {
     setError("");
     setMessage("");
     setSending(true);
 
     try {
-      await callOtpApi("/api/auth/resend-verification");
+      const result = await callOtpApi("/api/auth/resend-verification");
+      if (result.alreadyVerified) {
+        await refreshSecureSession();
+        router.replace(safeRedirectTo);
+        return;
+      }
+
       setMessage("A verification code has been sent to your email.");
     } catch (error) {
       setError(error instanceof Error ? error.message : "Unable to send code.");
@@ -76,15 +97,7 @@ function VerifyEmailContent() {
       if (!user) throw new Error("You need to sign in again.");
 
       await callOtpApi("/api/auth/verify-email", { otp });
-      const refreshedToken = await user.getIdToken(true);
-      const sessionResponse = await fetch("/api/auth/session", {
-        method: "POST",
-        headers: { authorization: `Bearer ${refreshedToken}` },
-      });
-      if (!sessionResponse.ok) {
-        throw new Error("Unable to refresh your secure session.");
-      }
-      setAuthCookie(true, true);
+      await refreshSecureSession();
       router.replace(safeRedirectTo);
     } catch (error) {
       setError(
@@ -113,8 +126,9 @@ function VerifyEmailContent() {
     <main
       className="
         relative min-h-screen overflow-hidden
-        from-slate-950 via-slate-900 to-slate-950
-        flex items-center justify-center px-4 py-10
+        bg-linear-to-b from-slate-950 via-slate-900 to-slate-950
+        flex items-center justify-center px-4 py-6 sm:py-10
+        text-white
       "
     >
       <div className="pointer-events-none absolute -top-32 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl" />

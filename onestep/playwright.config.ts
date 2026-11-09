@@ -3,7 +3,8 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests',
-  fullyParallel: true,
+  fullyParallel: false,
+  workers: 1,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: 'html',
@@ -20,8 +21,12 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
     {
-      name: 'mobile-chromium',
+      name: 'android',
       use: { ...devices['Pixel 7'] },
+    },
+    {
+      name: 'ios',
+      use: { ...devices['iPhone 15'] },
     },
   ],
 

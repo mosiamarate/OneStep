@@ -2,7 +2,7 @@ import type { FocusSession } from "./focusSession";
 
 export interface LatestMoodSummary {
     label: string;
-    emoji: string;
+    moodId: string;
     phase: "before_focus" | "after_focus" | "unknown";
 }
 

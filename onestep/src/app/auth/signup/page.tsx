@@ -118,11 +118,9 @@ export default function SignupPage() {
     <main
       className="
         relative min-h-screen overflow-hidden
-        .bg-gradient-to-b {
-        --tw-gradient-position: to bottom in oklab;
-        background-image: linear-gradient(var(--tw-gradient-stops));
-        } from-slate-950 via-slate-900 to-slate-950
-        flex items-center justify-center px-4 py-10
+        bg-linear-to-b from-slate-950 via-slate-900 to-slate-950
+        flex items-center justify-center px-4 py-6 sm:py-10
+        text-white
       "
     >
       <div className="pointer-events-none absolute -top-32 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl" />
@@ -177,6 +175,7 @@ export default function SignupPage() {
               onChange={(event) => setPassword(event.target.value)}
               autoComplete="new-password"
               disabled={loading !== null}
+              showPasswordToggle
               required
             />
 
@@ -188,6 +187,7 @@ export default function SignupPage() {
               onChange={(event) => setConfirmPassword(event.target.value)}
               autoComplete="new-password"
               disabled={loading !== null}
+              showPasswordToggle
               required
             />
 

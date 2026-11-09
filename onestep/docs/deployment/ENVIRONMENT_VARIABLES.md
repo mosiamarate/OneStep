@@ -36,9 +36,13 @@ If neither credential form is present, `firebaseAdmin.ts` initializes Firebase A
 | `RESEND_API_KEY` | Required when sending OTP or welcome email; missing value raises a handler error |
 | `EMAIL_FROM` | Optional sender; defaults to `OneStep <noreply@onestepapp.co.za>` |
 | `SUPPORT_EMAIL` | Optional email-template contact; defaults to `support@onestepapp.co.za` |
-| `OTP_SECRET` | Preferred OTP hash secret. It is optional in code but should be a unique, high-entropy server secret in any deployment. |
+| `OTP_SECRET` | Required server-only OTP hash secret. Must contain at least 32 characters and should be generated uniquely with high entropy. |
 
-`src/lib/otp.ts` falls back in order to `FIREBASE_PRIVATE_KEY`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, and the literal `onestep` when `OTP_SECRET` is absent. Do not depend on this fallback.
+OTP operations fail closed when `OTP_SECRET` is missing or shorter than 32 characters. There is no fallback to Firebase credentials, public project configuration, or a literal.
+
+## Distributed rate limiting
+
+The API rate limiter stores rolling-window timestamps in the Admin-only `apiRateLimits` collection. Set a Firestore TTL policy on its `expiresAt` field so expired rate-limit documents are removed. The limiter uses a valid `x-real-ip` address supplied by the hosting proxy; if absent or invalid, requests share the conservative `unknown` bucket. Configure the proxy to overwrite this header rather than forwarding a client-provided value.
 
 ## Environment validation caveat
 

@@ -13,14 +13,18 @@ export default function Button({
     <button
       className={`
         w-full
-        py-3
+        min-h-12
+        px-4
         rounded-xl
         bg-blue-500
         hover:bg-blue-600
         text-white
         font-medium
-        transition-all
-        duration-200
+        transition-colors
+        duration-150
+        focus-visible:outline-2
+        focus-visible:outline-offset-2
+        focus-visible:outline-blue-300
         disabled:opacity-50
         disabled:cursor-not-allowed
         ${className}

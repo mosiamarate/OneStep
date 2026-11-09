@@ -31,17 +31,17 @@ export default function LegalPageShell({
         via-slate-900
         to-slate-950
         px-4
-        py-6
+        py-4
         text-white
         sm:px-6
-        sm:py-8
+        sm:py-6
         lg:px-8
       "
     >
       <div className="pointer-events-none absolute -top-32 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-blue-500/10 blur-3xl" />
 
       <div className="relative z-10 mx-auto w-full max-w-4xl">
-        <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
+        <header className="mb-6 flex flex-wrap items-center justify-between gap-3 sm:mb-8 sm:gap-4">
           <Link
             href="/"
             className="flex items-center gap-3"
@@ -85,13 +85,14 @@ export default function LegalPageShell({
 
         <article
           className="
-            rounded-3xl
+            rounded-2xl
             border
             border-slate-800
             bg-slate-900/70
-            p-5
+            p-4
             shadow-2xl
             backdrop-blur-xl
+            sm:rounded-3xl
             sm:p-7
             md:p-10
           "

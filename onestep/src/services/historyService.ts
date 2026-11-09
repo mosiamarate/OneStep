@@ -6,17 +6,6 @@ import type { HistoryItem } from "../types/history";
 
 type FirestoreData = Record<string, unknown>;
 
-const moodEmojiMap: Record<string, string> = {
-  tired: "😴",
-  stressed: "🌧️",
-  okay: "🤍",
-  good: "🙂",
-  better: "🌿",
-  proud: "🌱",
-  calm: "😌",
-  same: "🤍",
-};
-
 function getDateValue(value: unknown): Date | null {
   if (value && typeof value === "object" && "toDate" in value) {
     const timestamp = value as { toDate?: () => Date };
@@ -84,7 +73,7 @@ export async function getFocusHistory(userId: string): Promise<HistoryItem[]> {
           dateLabel: formatDateLabel(sessionDate),
           timeLabel: formatTimeLabel(sessionDate),
           afterMoodLabel: getStringValue(mood?.moodLabel) || null,
-          afterMoodEmoji: moodValue ? moodEmojiMap[moodValue] || "🌿" : null,
+          afterMoodId: moodValue || null,
           reflection: session.reflection || getStringValue(raw.reflection) || null,
         },
         sortTime: sessionDate.getTime(),

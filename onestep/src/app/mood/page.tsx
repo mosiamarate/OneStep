@@ -73,21 +73,22 @@ export default function MoodPage() {
           via-slate-900
           to-slate-950
           px-4
-          py-10
+          py-6
+          sm:py-10
           text-white
         "
       >
         <div className="pointer-events-none absolute -top-32 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-blue-500/10 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-32 right-0 h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl" />
 
-        <section className="relative z-10 mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-4xl items-center">
+        <section className="relative z-10 mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-4xl items-center sm:min-h-[calc(100vh-5rem)]">
           <div className="w-full">
-            <div className="mb-10 text-center">
+            <div className="mb-6 text-center sm:mb-10">
               <p className="mb-3 text-sm font-medium uppercase tracking-[0.3em] text-blue-400">
                 Daily Check-In
               </p>
 
-              <h1 className="mb-4 text-4xl font-semibold tracking-tight text-white md:text-5xl">
+              <h1 className="mb-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl md:text-5xl">
                 How are you feeling today?
               </h1>
 
@@ -117,7 +118,7 @@ export default function MoodPage() {
               </div>
             )}
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
               {moods.map((mood) => (
                 <MoodCard
                   key={mood.id}

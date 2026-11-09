@@ -6,6 +6,7 @@ import Link from "next/link";
 
 import ProtectedRoute from "../../components/auth/ProtectedRoute";
 import Footer from "../../components/layout/Footer";
+import MoodIcon from "../../components/ui/MoodIcon";
 import { useAuth } from "../../hooks/useAuth";
 import { getFocusHistory } from "../../services/historyService";
 import type { HistoryItem } from "../../types/history";
@@ -77,17 +78,18 @@ export default function HistoryPage() {
           via-slate-900
           to-slate-950
           px-4
-          py-8
+          py-5
           text-white
           sm:px-6
+          sm:py-8
           lg:px-8
         "
       >
         <div className="pointer-events-none absolute -top-32 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-blue-500/10 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-32 right-0 h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl" />
 
-        <section className="relative z-10 mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-5xl flex-col">
-          <header className="mb-10 flex items-center justify-between gap-4">
+        <section className="relative z-10 mx-auto flex min-h-[calc(100dvh-2.5rem)] w-full max-w-5xl flex-col">
+          <header className="mb-6 flex items-center justify-between gap-3 sm:mb-10 sm:gap-4">
             <Link href="/dashboard" className="flex items-center gap-3">
               <Image
                 src="/icons/icon-192x192.png"
@@ -128,7 +130,7 @@ export default function HistoryPage() {
               border
               border-slate-800
               bg-slate-900/70
-              p-5
+              p-4
               shadow-2xl
               backdrop-blur-xl
               sm:p-6
@@ -172,11 +174,11 @@ export default function HistoryPage() {
             )}
 
             {loadingHistory || authLoading ? (
-              <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-950/40 p-6 text-center">
+              <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-950/40 p-4 text-center sm:p-6">
                 <p className="text-slate-400">Loading your history...</p>
               </div>
             ) : visibleHistory.length === 0 ? (
-              <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-950/40 p-6 text-center">
+              <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-950/40 p-4 text-center sm:p-6">
                 <h2 className="text-xl font-semibold text-white">
                   {history.length === 0 ? "No focus sessions yet." : `No ${filter} sessions found.`}
                 </h2>
@@ -253,8 +255,13 @@ export default function HistoryPage() {
                           )}
 
                           {item.afterMoodLabel && (
-                            <span className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs font-medium text-slate-300">
-                              {item.afterMoodEmoji} {item.afterMoodLabel}
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs font-medium text-slate-300">
+                              <MoodIcon
+                                mood={item.afterMoodId ?? ""}
+                                size={14}
+                                className="text-blue-300"
+                              />
+                              {item.afterMoodLabel}
                             </span>
                           )}
                         </div>

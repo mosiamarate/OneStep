@@ -82,6 +82,11 @@ export default function PrivacyPage() {
             sign-in.
           </li>
           <li>Your account creation and update dates.</li>
+          <li>
+            Authentication and security metadata, including email-verification
+            and password-reset records, session state, and hashed one-time
+            codes used for sign-in and account recovery.
+          </li>
         </BulletList>
 
         <h3 className="mt-5 font-semibold text-white">
@@ -106,7 +111,8 @@ export default function PrivacyPage() {
           Our technology providers may automatically process information needed
           to operate and secure the service. This can include IP addresses,
           browser or device information, authentication logs, request logs,
-          security events, and general usage information.
+          security events, rate-limit decisions, session tokens, and general
+          usage information used to maintain the service and prevent misuse.
         </p>
       </section>
 
@@ -183,6 +189,17 @@ export default function PrivacyPage() {
           performance, and request-delivery services.
         </p>
 
+        <h3 className="mt-5 font-semibold text-white">
+          Resend
+        </h3>
+
+        <p className="mt-3">
+          Resend sends verification and password-reset emails. In order to
+          deliver those messages, Resend may process email addresses, delivery
+          status, and message metadata associated with account-security
+          communications.
+        </p>
+
         <p className="mt-3">
           These providers process information according to their own legal
           terms, privacy notices, and data-processing arrangements.
@@ -218,13 +235,19 @@ export default function PrivacyPage() {
         <p className="mt-3">
           OneStep and its providers may use essential browser storage,
           authentication tokens, cookies, IndexedDB, local storage, cached
-          files, or service-worker storage.
+          files, service-worker storage, and install metadata.
         </p>
 
         <p className="mt-3">
           These technologies may be used to keep you signed in, remember app
           state, support PWA installation, improve performance, detect updates,
-          and protect the service.
+          deliver security reminders, and protect the service.
+        </p>
+
+        <p className="mt-3">
+          We limit cached content to public static assets and avoid storing
+          authenticated or API responses in the service worker cache. We also
+          use no-store handling for data export responses where appropriate.
         </p>
 
         <p className="mt-3">
@@ -258,13 +281,19 @@ export default function PrivacyPage() {
         </p>
 
         <p className="mt-3">
+          Security records such as authentication logs, rate-limit decisions,
+          and verification or reset records are kept only for as long as needed
+          to protect the service, investigate abuse, and meet legal obligations.
+        </p>
+
+        <p className="mt-3">
           Some information may be kept for longer where necessary for security,
           fraud prevention, legal compliance, dispute resolution, or backup
           recovery.
         </p>
 
         <p className="mt-3">
-          You may request account and data deletion by contacting{" "}
+          You may request account and data deletion or export by contacting{" "}
           <a
             href={contactLink}
             className="font-medium text-blue-300 underline decoration-blue-500/40 underline-offset-4 hover:text-blue-200"
@@ -281,8 +310,9 @@ export default function PrivacyPage() {
         <p className="mt-3">
           We use reasonable technical and organisational safeguards intended to
           protect personal information. These may include authentication,
-          access-control rules, secure connections, and security features
-          provided by Firebase and Vercel.
+          access-control rules, secure connections, session-cookie controls,
+          rate limiting, hashed one-time codes, and security features provided
+          by Firebase, Vercel, and related infrastructure providers.
         </p>
 
         <p className="mt-3">

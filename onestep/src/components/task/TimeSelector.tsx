@@ -232,7 +232,7 @@ export default function TimeSelector({
             disabled={disabled}
             aria-pressed={selectedTime === preset.minutes}
             onClick={() => selectParts(...Object.values(toParts(preset.minutes)) as [number, number])}
-            className={`rounded-full border px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
+            className={`rounded-xl border px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
               selectedTime === preset.minutes
                 ? "border-blue-500 bg-blue-500/15 text-blue-200"
                 : "border-slate-800 bg-slate-950/50 text-slate-400 hover:border-slate-700 hover:text-white"

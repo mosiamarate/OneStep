@@ -32,7 +32,7 @@ async function deleteQueryBatch(query: FirebaseFirestore.Query) {
 }
 
 export async function POST(request: NextRequest) {
-  const rateLimit = checkRateLimit(request, {
+  const rateLimit = await checkRateLimit(request, {
     ...RATE_LIMIT_PRESETS.STRICT,
     scope: "account-delete",
   });

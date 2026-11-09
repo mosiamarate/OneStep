@@ -38,20 +38,41 @@ function getAppUrl() {
   return process.env.NEXT_PUBLIC_APP_URL || "https://onestepapp.co.za";
 }
 
-async function assertOtpCooldown(uid: string, purpose: OtpPurpose) {
-  const otpSnap = await adminDb
+async function createOtpRecord(
+  uid: string,
+  email: string,
+  purpose: OtpPurpose
+) {
+  const otpRef = adminDb
     .collection("emailOtps")
-    .doc(getOtpDocId(uid, purpose))
-    .get();
+    .doc(getOtpDocId(uid, purpose));
+  const otp = generateOtp();
+  const otpHash = hashOtp(uid, otp, purpose);
 
-  const createdAt = otpSnap.data()?.createdAt as Timestamp | undefined;
+  await adminDb.runTransaction(async (transaction) => {
+    const otpSnap = await transaction.get(otpRef);
+    const createdAt = otpSnap.data()?.createdAt as Timestamp | undefined;
 
-  if (
-    createdAt &&
-    Date.now() - createdAt.toMillis() < RESEND_COOLDOWN_SECONDS * 1000
-  ) {
-    throw new Error("Please wait before requesting another code.");
-  }
+    if (
+      createdAt &&
+      Date.now() - createdAt.toMillis() < RESEND_COOLDOWN_SECONDS * 1000
+    ) {
+      throw new Error("Please wait before requesting another code.");
+    }
+
+    transaction.set(otpRef, {
+      uid,
+      email: email.toLowerCase(),
+      otpHash,
+      purpose,
+      attempts: 0,
+      expiresAt: getOtpExpiry(),
+      createdAt: FieldValue.serverTimestamp(),
+      used: false,
+    });
+  });
+
+  return { otp, otpRef, otpHash };
 }
 
 export async function sendOtpEmail({
@@ -61,37 +82,41 @@ export async function sendOtpEmail({
   uid,
 }: SendOtpEmailOptions) {
   assertEmailConfig();
-  await assertOtpCooldown(uid, purpose);
-
-  const otp = generateOtp();
-
-  await adminDb.collection("emailOtps").doc(getOtpDocId(uid, purpose)).set({
+  const { otp, otpRef, otpHash } = await createOtpRecord(
     uid,
-    email: email.toLowerCase(),
-    otpHash: hashOtp(uid, otp, purpose),
-    purpose,
-    attempts: 0,
-    expiresAt: getOtpExpiry(),
-    createdAt: FieldValue.serverTimestamp(),
-    used: false,
-  });
+    email,
+    purpose
+  );
 
-  if (purpose === OTP_PURPOSES.EMAIL_VERIFICATION) {
-    await resend.emails.send({
-      from: emailFrom,
-      to: email,
-      subject: "Verify your OneStep account",
-      react: VerifyEmail({ name, otp }),
+  try {
+    const result =
+      purpose === OTP_PURPOSES.EMAIL_VERIFICATION
+        ? await resend.emails.send({
+            from: emailFrom,
+            to: email,
+            subject: "Verify your OneStep account",
+            react: VerifyEmail({ name, otp }),
+          })
+        : await resend.emails.send({
+            from: emailFrom,
+            to: email,
+            subject: "Reset your OneStep password",
+            react: PasswordReset({ name, otp }),
+          });
+
+    if (result.error) {
+      throw new Error("Unable to deliver the code. Please try again.");
+    }
+
+  } catch (error) {
+    await adminDb.runTransaction(async (transaction) => {
+      const currentOtp = await transaction.get(otpRef);
+      if (currentOtp.data()?.otpHash === otpHash) {
+        transaction.delete(otpRef);
+      }
     });
-    return;
+    throw error;
   }
-
-  await resend.emails.send({
-    from: emailFrom,
-    to: email,
-    subject: "Reset your OneStep password",
-    react: PasswordReset({ name, otp }),
-  });
 }
 
 export async function sendWelcomeEmail(email: string, name: string) {

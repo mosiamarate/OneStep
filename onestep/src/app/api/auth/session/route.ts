@@ -16,7 +16,7 @@ function getBearerToken(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const rateLimit = checkRateLimit(request, {
+  const rateLimit = await checkRateLimit(request, {
     ...RATE_LIMIT_PRESETS.AUTH,
     scope: "session-create",
   });

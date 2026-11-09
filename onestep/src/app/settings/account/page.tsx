@@ -2,8 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { signOut } from "firebase/auth";
+import { X } from "lucide-react";
 import { useAuth } from "../../../hooks/useAuth";
-import { logoutUser } from "../../../lib/auth";
+import { auth } from "../../../lib/firebase";
+import { clearAuthCookies } from "../../../lib/authCookie";
 
 export default function AccountSecuritySettingsPage() {
   const { user } = useAuth();
@@ -44,9 +47,12 @@ export default function AccountSecuritySettingsPage() {
         throw new Error(data.error || "Failed to delete account.");
       }
 
-      // Logout and redirect to login page
-      await logoutUser();
-      router.replace("/auth/login");
+      try {
+        await signOut(auth);
+      } finally {
+        clearAuthCookies();
+        router.replace("/auth/login");
+      }
     } catch (err: unknown) {
       console.error("Account deletion failed:", err);
       const errorMessage =
@@ -66,7 +72,7 @@ export default function AccountSecuritySettingsPage() {
       </div>
 
       {/* Danger Zone Section */}
-      <section className="rounded-2xl border border-red-500/30 bg-red-500/5 p-6 space-y-4">
+      <section className="space-y-4 rounded-2xl border border-red-500/30 bg-red-500/5 p-4 sm:p-6">
         <div className="flex items-center gap-3">
           <div className="rounded-xl bg-red-500/20 p-2.5 text-red-400">
             <svg
@@ -129,8 +135,8 @@ export default function AccountSecuritySettingsPage() {
 
       {/* Confirmation Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-3xl border border-red-500/30 bg-slate-900 p-6 shadow-2xl space-y-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/80 p-3 backdrop-blur-sm animate-in fade-in duration-200 sm:p-4">
+          <div className="my-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-md space-y-5 overflow-y-auto rounded-2xl border border-red-500/30 bg-slate-900 p-4 shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:rounded-3xl sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="rounded-xl bg-red-500/20 p-2 text-red-400">
@@ -149,7 +155,7 @@ export default function AccountSecuritySettingsPage() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-white">
+                  <h3 className="text-lg font-semibold text-white sm:text-xl">
                     Confirm Account Deletion
                   </h3>
                   <p className="text-xs text-red-400 font-medium">
@@ -162,9 +168,10 @@ export default function AccountSecuritySettingsPage() {
                 type="button"
                 onClick={() => setIsModalOpen(false)}
                 disabled={isDeleting}
-                className="text-slate-400 hover:text-white"
+                aria-label="Close account deletion dialog"
+                className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white"
               >
-                ✕
+                <X aria-hidden="true" size={20} />
               </button>
             </div>
 
@@ -214,7 +221,7 @@ export default function AccountSecuritySettingsPage() {
               </div>
             )}
 
-            <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
+            <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row">
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}

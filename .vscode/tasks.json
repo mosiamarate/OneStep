@@ -1,0 +1,54 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Install Capacitor native preview dependencies",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"--prefix",
+				"onestep",
+				"install",
+				"@capacitor/core@latest",
+				"@capacitor/android@latest",
+				"@capacitor/ios@latest",
+				"--save-dev",
+				"@capacitor/cli@latest",
+				"cross-env@latest"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Set Capacitor runtime dependencies",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"--prefix",
+				"onestep",
+				"install",
+				"--save",
+				"@capacitor/core@^8.6.0",
+				"@capacitor/android@^8.6.0",
+				"@capacitor/ios@^8.6.0"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Lint native emulator integration",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"--prefix",
+				"onestep",
+				"run",
+				"lint"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$eslint-stylish"
+			]
+		}
+	]
+}

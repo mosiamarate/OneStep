@@ -41,6 +41,10 @@ The active purposes are `EMAIL_VERIFICATION` and `PASSWORD_RESET`. Each document
 
 There is no tracked TTL policy or job that removes unused, expired OTP records. The delete-account handler queries OTPs by `uid`.
 
+## `apiRateLimits/{scope_ip}`
+
+The server-side rate limiter stores rolling request timestamps and an `expiresAt` timestamp in this Admin-only collection. Configure Firestore TTL on `expiresAt` to remove expired rate-limit documents. Document IDs include the scope and validated `x-real-ip` address; requests without a valid trusted proxy address share the `unknown` key for that scope.
+
 ## Query and deletion behavior
 
 The dashboard, history, export, and deletion features locate task, mood, and focus-session records by `userId == uid`. Account deletion deletes `users/{uid}` and batches up to 100 matching documents recursively for `tasks`, `moods`, `focusSessions`, and `emailOtps`, then deletes the Firebase Auth user. It cannot establish the fate of provider backups or data outside those collections.

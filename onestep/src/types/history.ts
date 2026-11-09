@@ -12,6 +12,6 @@ export interface HistoryItem {
     dateLabel: string;
     timeLabel: string;
     afterMoodLabel: string | null;
-    afterMoodEmoji: string | null;
+    afterMoodId: string | null;
     reflection: string | null;
 }

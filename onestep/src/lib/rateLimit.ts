@@ -1,8 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import "server-only";
 
-interface RateLimitRecord {
-  timestamps: number[];
-}
+import { isIP } from "node:net";
+import { NextRequest, NextResponse } from "next/server";
+import { Timestamp } from "firebase-admin/firestore";
+
+import { adminDb } from "./firebase-admin";
+import { evaluateRateLimit } from "./rateLimitPolicy";
 
 interface RateLimitOptions {
   maxRequests: number;
@@ -11,70 +14,45 @@ interface RateLimitOptions {
   scope?: string;
 }
 
-const rateLimitMap = new Map<string, RateLimitRecord>();
-
-// Clean up expired entries every 5 minutes
-if (typeof setInterval !== "undefined") {
-  setInterval(() => {
-    const now = Date.now();
-    for (const [key, record] of rateLimitMap.entries()) {
-      const validTimestamps = record.timestamps.filter(
-        (ts) => now - ts < 15 * 60 * 1000
-      );
-      if (validTimestamps.length === 0) {
-        rateLimitMap.delete(key);
-      } else {
-        rateLimitMap.set(key, { timestamps: validTimestamps });
-      }
-    }
-  }, 5 * 60 * 1000);
-}
-
 function getClientIdentifier(request: NextRequest, customKey?: string): string {
   if (customKey) return customKey;
 
-  const ip =
-    request.headers.get("x-real-ip") ||
-    request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-    "unknown";
-
-  return ip;
+  const realIp = request.headers.get("x-real-ip")?.trim();
+  return realIp && isIP(realIp) ? realIp : "unknown";
 }
 
-export function checkRateLimit(
+export async function checkRateLimit(
   request: NextRequest,
   options: RateLimitOptions
-): { allowed: boolean; remaining: number; retryAfterSeconds: number } {
+): Promise<{ allowed: boolean; remaining: number; retryAfterSeconds: number }> {
   const { maxRequests, windowMs, identifierKey, scope } = options;
-  const key = `${scope || "global"}:${getClientIdentifier(request, identifierKey)}`;
+  const key = `${scope || "global"}_${encodeURIComponent(
+    getClientIdentifier(request, identifierKey)
+  )}`;
+  const recordRef = adminDb.collection("apiRateLimits").doc(key);
   const now = Date.now();
 
-  const record = rateLimitMap.get(key) || { timestamps: [] };
-  const validTimestamps = record.timestamps.filter(
-    (timestamp) => now - timestamp < windowMs
-  );
-
-  if (validTimestamps.length >= maxRequests) {
-    const oldestTimestamp = validTimestamps[0];
-    const retryAfterSeconds = Math.ceil(
-      (oldestTimestamp + windowMs - now) / 1000
+  return adminDb.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(recordRef);
+    const decision = evaluateRateLimit(
+      snapshot.data()?.timestamps,
+      maxRequests,
+      windowMs,
+      now
     );
+    if (!decision.allowed) return decision;
+
+    transaction.set(recordRef, {
+      timestamps: decision.timestamps,
+      expiresAt: Timestamp.fromMillis(now + windowMs),
+    });
 
     return {
-      allowed: false,
-      remaining: 0,
-      retryAfterSeconds: Math.max(1, retryAfterSeconds),
+      allowed: decision.allowed,
+      remaining: decision.remaining,
+      retryAfterSeconds: decision.retryAfterSeconds,
     };
-  }
-
-  validTimestamps.push(now);
-  rateLimitMap.set(key, { timestamps: validTimestamps });
-
-  return {
-    allowed: true,
-    remaining: maxRequests - validTimestamps.length,
-    retryAfterSeconds: 0,
-  };
+  });
 }
 
 export function createRateLimitResponse(retryAfterSeconds: number): NextResponse {

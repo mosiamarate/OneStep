@@ -43,17 +43,18 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
           via-slate-900
           to-slate-950
           px-4
-          py-8
+          py-5
           text-white
           sm:px-6
+          sm:py-8
           lg:px-8
         "
       >
         <div className="pointer-events-none absolute -top-32 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-blue-500/10 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-32 right-0 h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl" />
 
-        <section className="relative z-10 mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-5xl flex-col">
-          <header className="mb-8 flex items-center justify-between gap-4">
+        <section className="relative z-10 mx-auto flex min-h-[calc(100dvh-2.5rem)] w-full max-w-5xl flex-col">
+          <header className="mb-6 flex items-center justify-between gap-3 sm:mb-8 sm:gap-4">
             <Link href="/dashboard" className="flex items-center gap-3">
               <Image
                 src="/icons/icon-192x192.png"
@@ -95,7 +96,7 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
               border
               border-slate-800
               bg-slate-900/70
-              p-5
+              p-4
               shadow-2xl
               backdrop-blur-xl
               sm:p-6
@@ -114,7 +115,7 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
             {/* Tab Navigation */}
             <nav
               aria-label="Settings navigation"
-              className="mb-8 flex flex-wrap gap-2 border-b border-slate-800 pb-4"
+              className="mb-6 flex flex-wrap gap-2 border-b border-slate-800 pb-4 sm:mb-8"
             >
               {tabs.map((tab) => {
                 const isActive = pathname === tab.href;
@@ -125,11 +126,12 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
                     href={tab.href}
                     className={`
                       rounded-xl
-                      px-4
+                      px-3
                       py-2.5
                       text-sm
                       font-medium
                       transition
+                      sm:px-4
                       ${
                         isActive
                           ? "bg-blue-500 text-white shadow-lg shadow-blue-500/20"

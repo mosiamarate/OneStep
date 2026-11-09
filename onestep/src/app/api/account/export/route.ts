@@ -45,7 +45,7 @@ function serializeValue(value: unknown): unknown {
 }
 
 export async function GET(request: NextRequest) {
-  const rateLimit = checkRateLimit(request, {
+  const rateLimit = await checkRateLimit(request, {
     ...RATE_LIMIT_PRESETS.STRICT,
     scope: "account-export",
   });
@@ -140,6 +140,7 @@ export async function GET(request: NextRequest) {
       headers: {
         "Content-Type": "application/json",
         "Content-Disposition": `attachment; filename="onestep-data-export-${uid}.json"`,
+        "Cache-Control": "no-store",
       },
     });
   } catch (error) {

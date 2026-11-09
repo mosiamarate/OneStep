@@ -129,12 +129,12 @@ export default function ProfileSettingsPage() {
       </div>
 
       {profileLoading ? (
-        <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-6 text-slate-400">
+        <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4 text-slate-400 sm:p-6">
           Loading profile details...
         </div>
       ) : (
         <div className="space-y-6">
-          <section className="flex items-center justify-between gap-4 rounded-2xl border border-slate-800 bg-slate-950/40 p-6">
+          <section className="flex items-center justify-between gap-3 rounded-2xl border border-slate-800 bg-slate-950/40 p-4 sm:gap-4 sm:p-6">
             <div>
               <h3 className="font-medium text-white">Completion sound</h3>
               <p className="mt-1 text-sm text-slate-400">
@@ -155,7 +155,7 @@ export default function ProfileSettingsPage() {
           </section>
 
           {/* Profile Overview Card */}
-          <div className="flex flex-col gap-6 rounded-2xl border border-slate-800 bg-slate-950/40 p-6 sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-950/40 p-4 sm:flex-row sm:items-center sm:gap-6 sm:p-6">
             <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-blue-600/20 text-3xl font-bold text-blue-400 border border-blue-500/30">
               {(displayName || email || "U").charAt(0).toUpperCase()}
             </div>
@@ -175,7 +175,7 @@ export default function ProfileSettingsPage() {
 
           {/* Edit Profile Form */}
           <form onSubmit={handleUpdateProfile} className="space-y-6">
-            <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-6 space-y-4">
+            <div className="space-y-4 rounded-2xl border border-slate-800 bg-slate-950/40 p-4 sm:p-6">
               <div>
                 <label
                   htmlFor="displayName"

@@ -23,10 +23,11 @@ The Admin-backed route handlers explicitly request the Node.js runtime. A deploy
 2. Verify Firebase Authentication provider configuration and authorized domains in Firebase Console.
 3. Export, review, version-control, and deploy Firestore rules and required indexes. The browser application depends on them for data authorization.
 4. Configure and verify the Resend sender/domain before enabling verification and reset flows.
-5. Set a unique high-entropy `OTP_SECRET`; source otherwise falls back to weaker values.
-6. Run lint, build, and the relevant tests. The current test suite is not coverage of auth, Firestore, or APIs.
-7. Inspect service-worker behavior after deployment. It registers only when `NODE_ENV === "production"` and its current cache policy can retain same-origin GET responses.
-8. Verify the host's logs, alerting, backups, incident contacts, TLS policy, and external headers. None are established by source control.
+5. Set a unique high-entropy `OTP_SECRET` with at least 32 characters; OTP routes fail closed if it is absent or too short.
+6. Configure a Firestore TTL policy on `apiRateLimits.expiresAt`, and configure the hosting proxy to overwrite `x-real-ip`.
+7. Run lint, build, and the relevant tests. Playwright policy tests cover OTP-secret validation and rate-limit window decisions; they do not establish Firebase/Resend integration behavior.
+8. Inspect service-worker behavior after deployment. It registers only when `NODE_ENV === "production"` and now caches only public static assets; authenticated/API responses are excluded.
+9. Verify the host's logs, alerting, backups, incident contacts, TLS policy, and external headers. None are established by source control.
 
 ## Application headers
 

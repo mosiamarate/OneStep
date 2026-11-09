@@ -7,7 +7,9 @@ This checklist separates code observations from unverified environment work. A c
 - [x] Firebase Admin routes verify bearer ID tokens for session creation, OTP verification, export, and deletion.
 - [x] Protected page navigation verifies a 24-hour Firebase Admin session cookie with revocation checking.
 - [x] OTP values are hashed, expire after 10 minutes, and have five recorded attempts.
-- [x] Authentication and sensitive routes call the in-memory rate-limit helper.
+- [x] Authentication and sensitive routes use Firestore-transaction-backed rolling rate limits.
+- [x] OTP processing requires a dedicated `OTP_SECRET` with at least 32 characters.
+- [x] Service worker caches only public static assets; account exports use `Cache-Control: no-store`.
 - [x] The delete endpoint derives the account from the verified token.
 - [x] Basic `nosniff`, referrer, frame, and permissions headers are configured.
 - [x] `.gitignore` excludes `.env*` and common Firebase Admin credential file names.
@@ -25,12 +27,10 @@ This checklist separates code observations from unverified environment work. A c
 
 ## Known remediation work
 
-- [ ] Use a shared or platform-backed rate limit for multi-instance deployments.
-- [ ] Require a strong `OTP_SECRET`; do not rely on code fallbacks.
 - [ ] Add a server-side confirmation/re-authentication control if the deletion phrase is meant as a security boundary.
 - [ ] Add a CSP and evaluate HSTS at the deployment boundary.
-- [ ] Prevent sensitive same-origin `GET` responses from entering the service-worker cache.
 - [ ] Add emulator/API authorization tests and coverage for OTP, export, deletion, and session revocation.
-- [ ] Define and implement OTP expiry cleanup or a Firestore TTL policy.
+- [ ] Configure Firestore TTL for `apiRateLimits.expiresAt`.
+- [ ] Confirm the hosting proxy overwrites `x-real-ip`.
 
 Use this list as implementation work tracking. It is not an attestation of POPIA, GDPR, OWASP, SOC 2, ISO 27001, or any other framework.
